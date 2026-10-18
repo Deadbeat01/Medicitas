@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Calendar, Clock, User, Mail, Phone, FileText, UserCheck, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -35,31 +34,53 @@ const AppointmentFormWithSupabase = ({ currentUser }: AppointmentFormProps) => {
     reason: ''
   });
 
+  // Errores de validación por campo
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const { data: specialties = [], isLoading: loadingSpecialties } = useSpecialties();
   const { data: hospitals = [], isLoading: loadingHospitals } = useHospitals();
   const { data: doctors = [], isLoading: loadingDoctors } = useDoctors();
   const createAppointment = useCreateAppointment();
 
+  // Valida cada campo y guarda un mensaje de error por campo
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.hospitalId) newErrors.hospitalId = 'Seleccione un hospital.';
+    if (!formData.doctorId) newErrors.doctorId = 'Seleccione un doctor.';
+    if (!formData.appointmentDate) newErrors.appointmentDate = 'Seleccione una fecha.';
+    if (!formData.appointmentTime) newErrors.appointmentTime = 'Seleccione una hora.';
+
+    // La fecha y hora deben ser futuras
+    if (formData.appointmentDate && formData.appointmentTime) {
+      const selected = new Date(`${formData.appointmentDate}T${formData.appointmentTime}`);
+      if (selected <= new Date()) {
+        newErrors.appointmentTime = 'La fecha y hora deben ser futuras.';
+      }
+    }
+
+    // Motivo: obligatorio, mínimo 10 y máximo 300 caracteres
+    const reason = formData.reason.trim();
+    if (!reason) {
+      newErrors.reason = 'Ingrese el motivo de la consulta.';
+    } else if (reason.length < 10) {
+      newErrors.reason = 'El motivo debe tener al menos 10 caracteres.';
+    } else if (reason.length > 300) {
+      newErrors.reason = 'El motivo no puede superar los 300 caracteres.';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validation
-    if (!formData.hospitalId || !formData.doctorId || 
-        !formData.appointmentDate || !formData.appointmentTime || !formData.reason) {
+    if (!validateForm()) {
       toast({
-        title: "Error",
-        description: "Por favor, complete todos los campos",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if date is in the future
-    const selectedDate = new Date(formData.appointmentDate + 'T' + formData.appointmentTime);
-    if (selectedDate <= new Date()) {
-      toast({
-        title: "Error",
-        description: "La fecha y hora deben ser futuras",
+        title: "Error de validación",
+        description: "Revise los campos marcados en rojo",
         variant: "destructive",
       });
       return;
@@ -77,7 +98,7 @@ const AppointmentFormWithSupabase = ({ currentUser }: AppointmentFormProps) => {
         hospital_id: formData.hospitalId,
         appointment_date: formData.appointmentDate,
         appointment_time: formData.appointmentTime,
-        reason: formData.reason,
+        reason: formData.reason.trim(),
         status: 'pending',
         patient_id: currentUser.id
       });
@@ -95,6 +116,7 @@ const AppointmentFormWithSupabase = ({ currentUser }: AppointmentFormProps) => {
         appointmentTime: '',
         reason: ''
       });
+      setErrors({});
     } catch (error) {
       toast({
         title: "Error",
@@ -106,6 +128,8 @@ const AppointmentFormWithSupabase = ({ currentUser }: AppointmentFormProps) => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Limpia el error del campo cuando el usuario lo corrige
+    setErrors(prev => ({ ...prev, [field]: '' }));
   };
 
   // Get minimum date (today)
@@ -124,7 +148,7 @@ const AppointmentFormWithSupabase = ({ currentUser }: AppointmentFormProps) => {
       </CardHeader>
       
       <CardContent className="p-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} noValidate className="space-y-6">
           {/* Patient Information - Read only */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800 flex items-center space-x-2">
@@ -177,6 +201,7 @@ const AppointmentFormWithSupabase = ({ currentUser }: AppointmentFormProps) => {
                     )}
                   </SelectContent>
                 </Select>
+                {errors.hospitalId && <p className="text-sm text-red-600">{errors.hospitalId}</p>}
               </div>
             </div>
           </div>
@@ -210,6 +235,7 @@ const AppointmentFormWithSupabase = ({ currentUser }: AppointmentFormProps) => {
                     )}
                   </SelectContent>
                 </Select>
+                {errors.doctorId && <p className="text-sm text-red-600">{errors.doctorId}</p>}
               </div>
               
               <div className="space-y-2">
@@ -226,6 +252,7 @@ const AppointmentFormWithSupabase = ({ currentUser }: AppointmentFormProps) => {
                     required
                   />
                 </div>
+                {errors.appointmentDate && <p className="text-sm text-red-600">{errors.appointmentDate}</p>}
               </div>
               
               <div className="space-y-2">
@@ -243,6 +270,7 @@ const AppointmentFormWithSupabase = ({ currentUser }: AppointmentFormProps) => {
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.appointmentTime && <p className="text-sm text-red-600">{errors.appointmentTime}</p>}
               </div>
             </div>
             
@@ -259,6 +287,7 @@ const AppointmentFormWithSupabase = ({ currentUser }: AppointmentFormProps) => {
                   required
                 />
               </div>
+              {errors.reason && <p className="text-sm text-red-600">{errors.reason}</p>}
             </div>
           </div>
 
