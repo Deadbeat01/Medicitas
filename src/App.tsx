@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
+import ForgotPasswordForm from "./components/ForgotPasswordForm";
+import VerifyRecoveryCode from "./components/VerifyRecoveryCode";
 
 const queryClient = new QueryClient();
 
@@ -18,6 +20,14 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<Auth />} />
+          <Route
+            path="/recuperar-contrasena"
+            element={<ForgotPasswordForm onBackToLogin={() => window.location.assign("/auth")} />}
+          />
+          <Route
+            path="/verificar-codigo"
+            element={<VerifyRecoveryCode />}
+          />
           <Route path="/" element={<Dashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

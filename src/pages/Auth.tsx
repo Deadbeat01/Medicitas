@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { User, Lock, Mail, Phone, UserPlus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -157,6 +158,16 @@ const Auth = () => {
               </div>
             </div>
 
+            {isLogin && (
+              <div className="text-right">
+                <Link
+                  to="/recuperar-contrasena"
+                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
+            )}
             {!isLogin && userType === 'patient' && (
               <div className="space-y-2">
                 <Label htmlFor="phone">Teléfono (Opcional)</Label>

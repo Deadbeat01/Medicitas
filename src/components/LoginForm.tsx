@@ -8,9 +8,10 @@ import { Stethoscope, User, Lock, Mail } from 'lucide-react';
 interface LoginFormProps {
   onLogin: (email: string, password: string, userType: 'patient' | 'doctor') => void;
   onShowRegister: () => void;
+  onShowForgotPassword: () => void;
 }
 
-const LoginForm = ({ onLogin, onShowRegister }: LoginFormProps) => {
+const LoginForm = ({ onLogin, onShowRegister, onShowForgotPassword }: LoginFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [userType, setUserType] = useState<'patient' | 'doctor'>('patient');
@@ -96,7 +97,16 @@ const LoginForm = ({ onLogin, onShowRegister }: LoginFormProps) => {
                 />
               </div>
             </div>
-
+            
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={onShowForgotPassword}
+                className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+            </div>
             <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
               Iniciar Sesión como {userType === 'patient' ? 'Paciente' : 'Doctor'}
             </Button>
