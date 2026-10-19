@@ -1,0 +1,3 @@
+package.json -text whitespace=cr-at-eol
+package-lock.json -text whitespace=cr-at-eol
+supabase/legacy-migrations/*.sql -text
