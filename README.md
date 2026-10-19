@@ -28,11 +28,11 @@ Abre http://localhost:8080. La clave de `.env.example` es pública y solo permit
 
 ## Configuración inicial del propietario
 
-Proyecto: `qpkvjnykirgfgdljqirl`, región São Paulo. No utiliza el proyecto anterior de Chauca.
+Proyecto: `qpkvjnykirgfgdljqirl`, región São Paulo. 
 
 1. En Supabase Authentication → URL Configuration, fija Site URL en `http://localhost:8080` y agrega como Redirect URLs `http://localhost:8080/auth`, `http://localhost:8080/recuperar` y `http://localhost:8080/perfil`. Para usar 127.0.0.1, agrega también esas tres rutas con ese host.
-2. Para esta demostración universitaria, Confirm email está desactivado: las cuentas nuevas ingresan directamente con correo y contraseña. Para recuperación y cambios de correo sigue siendo necesario recibir mensajes; configura SMTP propio si necesitas enviarlos a integrantes distintos del propietario.
-3. Crea una cuenta desde la aplicación. El primer administrador lo autoriza el propietario en SQL Editor, usando el ID de su propia cuenta. No hay cuentas ni contraseñas universales de demostración.
+2. Confirm email está desactivado: las cuentas nuevas ingresan directamente con correo y contraseña. Para recuperación y cambios de correo sigue siendo necesario recibir mensajes; configura SMTP propio si necesitas enviarlos a integrantes distintos del propietario.
+3. Crea una cuenta desde la aplicación. El primer administrador lo autoriza el propietario en SQL Editor, usando el ID de su propia cuenta. 
 
 ```sql
 -- Sustituye el UUID por el de TU cuenta confirmada.
