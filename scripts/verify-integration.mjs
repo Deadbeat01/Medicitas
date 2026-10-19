@@ -20,10 +20,8 @@ async function login(prefix) {
   if (error) throw error;
   return { c, id: data.user.id };
 }
-const [patient, other, doctor, admin] = await Promise.all(
-  ["TEST_PATIENT", "TEST_OTHER_PATIENT", "TEST_DOCTOR", "TEST_ADMIN"].map(
-    login,
-  ),
+const [patient, other, doctor] = await Promise.all(
+  ["TEST_PATIENT", "TEST_OTHER_PATIENT", "TEST_DOCTOR"].map(login),
 );
 const p = patient.c;
 const original = await p
@@ -100,6 +98,36 @@ const row = {
   status: "pending",
 };
 // Use dedicated disposable accounts. This leaves a completed test appointment as evidence.
+assert.ok(
+  (await p.from("appointments").insert({ ...row, reason: "corto" })).error,
+);
+assert.ok(
+  (
+    await p
+      .from("appointments")
+      .insert({ ...row, appointment_date: "2020-01-01" })
+  ).error,
+);
+assert.ok(
+  (await p.from("appointments").insert({ ...row, status: "confirmed" })).error,
+);
+const alternateHospital = await p
+  .from("hospitals")
+  .select("id")
+  .neq("id", row.hospital_id)
+  .limit(1)
+  .single();
+assert.ifError(alternateHospital.error);
+assert.ok(
+  (
+    await p
+      .from("appointments")
+      .insert({ ...row, hospital_id: alternateHospital.data.id })
+  ).error,
+);
+console.log(
+  "PASS database rejects short reasons, past dates, initial confirmations and wrong hospitals",
+);
 const results = await Promise.all([
   p.from("appointments").insert(row).select().single(),
   p.from("appointments").insert(row).select().single(),
@@ -146,11 +174,58 @@ assert.ifError(
   ).error,
 );
 console.log("PASS assigned doctor confirms and completes");
-const adminRows = await admin.c.from("profiles").select("id");
-assert.ifError(adminRows.error);
-assert.ok(adminRows.data.length >= 4);
-console.log("PASS admin sees registered accounts");
-await Promise.all(
-  [patient, other, doctor, admin].map((x) => x.c.auth.signOut()),
+const cancellable = await p
+  .from("appointments")
+  .insert({ ...row, appointment_time: "14:30" })
+  .select()
+  .single();
+assert.ifError(cancellable.error);
+assert.ok(
+  (
+    await other.c
+      .from("appointments")
+      .update({ status: "cancelled" })
+      .eq("id", cancellable.data.id)
+      .select()
+      .single()
+  ).error,
 );
+assert.ifError(
+  (
+    await p
+      .from("appointments")
+      .update({ status: "cancelled" })
+      .eq("id", cancellable.data.id)
+      .select()
+      .single()
+  ).error,
+);
+assert.ok(
+  (
+    await p
+      .from("appointments")
+      .update({ status: "pending" })
+      .eq("id", cancellable.data.id)
+  ).error,
+);
+console.log(
+  "PASS owner cancellation, foreign cancellation denial and closed state protection",
+);
+if (process.env.TEST_EXPECT_NOTES === "true") {
+  const assignedNotes = await doctor.c.from("medical_notes").select("id");
+  assert.ifError(assignedNotes.error);
+  assert.ok(assignedNotes.data.length > 0);
+  console.log("PASS assigned doctor reads the fictitious note fixture");
+}
+if (process.env.TEST_ADMIN_EMAIL && process.env.TEST_ADMIN_PASSWORD) {
+  const admin = await login("TEST_ADMIN");
+  const adminRows = await admin.c.from("profiles").select("id");
+  assert.ifError(adminRows.error);
+  assert.ok(adminRows.data.length >= 4);
+  console.log("PASS admin sees registered accounts");
+  await admin.c.auth.signOut();
+} else {
+  console.log("SKIP admin login: verify through the owner's browser session");
+}
+await Promise.all([patient, other, doctor].map((x) => x.c.auth.signOut()));
 console.log("Integration checks passed with real Supabase requests.");

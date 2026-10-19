@@ -52,8 +52,8 @@ export default function AdminRoleForm({
     <section className="surface">
       <h2 className="card-heading">Asignar un rol</h2>
       <p className="muted mb-6">
-        Primero la persona crea y confirma su cuenta de paciente. Después puedes
-        autorizar su acceso profesional.
+        Primero la persona crea su cuenta de paciente. Después puedes autorizar
+        su acceso profesional.
       </p>
       <form onSubmit={save} className="space-y-5">
         <fieldset disabled={busy} className="grid md:grid-cols-2 gap-5">

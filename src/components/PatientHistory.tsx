@@ -30,7 +30,7 @@ export default function PatientHistory({ currentUser }: { currentUser: User }) {
       return data.filter(
         (appointment) =>
           new Date(
-            `${appointment.appointment_date}T${appointment.appointment_time}`,
+            `${appointment.appointment_date}T${appointment.appointment_time}-05:00`,
           ) < now,
       );
     },
@@ -77,10 +77,11 @@ export default function PatientHistory({ currentUser }: { currentUser: User }) {
                   </div>
                   <p>
                     {new Date(
-                      `${appointment.appointment_date}T${appointment.appointment_time}`,
+                      `${appointment.appointment_date}T${appointment.appointment_time}-05:00`,
                     ).toLocaleString("es-PE", {
                       dateStyle: "long",
                       timeStyle: "short",
+                      timeZone: "America/Lima",
                     })}
                   </p>
                   <p className="text-muted-foreground">

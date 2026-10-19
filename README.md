@@ -58,7 +58,7 @@ npm run build
 node scripts/verify-anonymous.mjs
 ```
 
-`verify-anonymous.mjs` verifica rechazos reales de lectura sin sesión en la nueva base. Para las pruebas de integración con cuentas de prueba, configura VITE_SUPABASE_URL y VITE_SUPABASE_PUBLISHABLE_KEY más TEST_PATIENT_EMAIL/PASSWORD, TEST_OTHER_PATIENT_EMAIL/PASSWORD, TEST_DOCTOR_EMAIL/PASSWORD y TEST_ADMIN_EMAIL/PASSWORD como variables de entorno locales. Ejecuta `node scripts/verify-integration.mjs`. No guardes esas contraseñas en Git.
+`verify-anonymous.mjs` verifica rechazos reales de lectura sin sesión en la nueva base. Para las pruebas de integración con cuentas de prueba, configura VITE_SUPABASE_URL y VITE_SUPABASE_PUBLISHABLE_KEY más TEST_PATIENT_EMAIL/PASSWORD, TEST_OTHER_PATIENT_EMAIL/PASSWORD y TEST_DOCTOR_EMAIL/PASSWORD como variables de entorno locales. TEST_ADMIN_EMAIL/PASSWORD es opcional; si no se proporciona, el script indica SKIP para el login administrador, que se comprueba en la sesión real del propietario. TEST_EXPECT_NOTES=true activa la comprobación de una nota ficticia previamente preparada. Ejecuta `node scripts/verify-integration.mjs`. No guardes esas contraseñas en Git.
 
 La prueba de integración modifica y restaura el nombre del paciente y deja una cita ficticia completada, a 120 días, como evidencia. Usa cuentas dedicadas de prueba. Comprueba persistencia, aislamiento, rechazo de escalada de rol, dos reservas concurrentes y transiciones por rol. No verifica entrega de correos, que requiere confirmar recepción en la bandeja del destinatario.
 
@@ -71,4 +71,3 @@ La prueba de integración modifica y restaura el nombre del paciente y deja una 
 - Chauca: `feature/autenticacion` no tenía avances sobre el login original al revisar; esta rama implementa la migración a Supabase Auth que faltaba.
 
 Los documentos en `docs/perfil-paciente` son evidencia histórica de la primera entrega. Sus capturas son simuladas y no prueban esta integración.
-
