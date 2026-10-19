@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -58,6 +59,7 @@ const Dashboard = () => {
           </button>
         </div>
 
+        {user.userType === 'patient' && <div className="mb-6"><Link to="/perfil" className="text-blue-700 underline font-medium">Mi perfil e historial</Link></div>}
         {activeTab === 'book' && user.userType === 'patient' ? (
           <AppointmentFormWithSupabase currentUser={user} />
         ) : (
