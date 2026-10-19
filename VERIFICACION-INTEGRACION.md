@@ -30,3 +30,9 @@ Referencia: https://supabase.com/docs/guides/database/database-linter?lint=0029_
 La compilación informa avisos de tamaño de paquete y datos de Browserslist antiguos. La plantilla de correo de citas se puede previsualizar, pero no se conecta a un proveedor de envío. La distribución original pedía preparar una plantilla; no se afirma que exista un envío de confirmaciones o recordatorios.
 
 No hay cuentas universales ni contraseñas de demostración precreadas. No se desplegó una función de creación de cuentas.
+
+## Configuración para la demostración universitaria
+
+Por solicitud explícita del usuario, se desactivó Confirm email en Authentication → Sign In / Providers. Se comprobó tras recargar el panel y consultando /auth/v1/settings: mailer_autoconfirm=true y disable_signup=false. Los registros nuevos pueden iniciar sesión sin abrir un correo. Esto no habilita el inicio de sesión anónimo ni cambia los permisos de rol.
+
+La cuenta del propietario está confirmada y su rol administrador fue autorizado explícitamente y comprobado en el panel real. La cuenta paciente creada antes del cambio seguía sin confirmar al comprobarla; no se realizó una confirmación masiva de cuentas anteriores.

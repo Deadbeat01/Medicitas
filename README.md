@@ -16,7 +16,7 @@ Abre http://localhost:8080. La clave de `.env.example` es pública y solo permit
 
 ## Funciones
 
-- Inicio de sesión y registro de pacientes con Supabase Auth, confirmación de correo y sesión compartida entre pantallas. No se almacenan contraseñas en tablas públicas.
+- Inicio de sesión y registro de pacientes con Supabase Auth, registro directo sin confirmación de correo para la demostración universitaria y sesión compartida entre pantallas. No se almacenan contraseñas en tablas públicas.
 - Recuperación por enlace y actualización de contraseña. El enlace debe regresar a `/recuperar`.
 - Reservas con validación de motivo entre 10 y 300 caracteres, fecha futura, médico y centro correspondientes, y unicidad de horarios activos en la base.
 - El médico asignado confirma, completa o cancela sus citas; el paciente solo puede cancelar sus reservas activas.
@@ -31,8 +31,8 @@ Abre http://localhost:8080. La clave de `.env.example` es pública y solo permit
 Proyecto: `qpkvjnykirgfgdljqirl`, región São Paulo. No utiliza el proyecto anterior de Chauca.
 
 1. En Supabase Authentication → URL Configuration, fija Site URL en `http://localhost:8080` y agrega como Redirect URLs `http://localhost:8080/auth`, `http://localhost:8080/recuperar` y `http://localhost:8080/perfil`. Para usar 127.0.0.1, agrega también esas tres rutas con ese host.
-2. Mantén activa la confirmación de correo. Configura SMTP propio si necesitas enviar correos a integrantes distintos del propietario y superar las restricciones del servicio de prueba de Supabase.
-3. Crea y confirma una cuenta desde la aplicación. El primer administrador lo autoriza el propietario en SQL Editor, usando el ID de la cuenta verificada. No hay cuentas ni contraseñas universales de demostración.
+2. Para esta demostración universitaria, Confirm email está desactivado: las cuentas nuevas ingresan directamente con correo y contraseña. Para recuperación y cambios de correo sigue siendo necesario recibir mensajes; configura SMTP propio si necesitas enviarlos a integrantes distintos del propietario.
+3. Crea una cuenta desde la aplicación. El primer administrador lo autoriza el propietario en SQL Editor, usando el ID de su propia cuenta. No hay cuentas ni contraseñas universales de demostración.
 
 ```sql
 -- Sustituye el UUID por el de TU cuenta confirmada.
@@ -58,7 +58,7 @@ npm run build
 node scripts/verify-anonymous.mjs
 ```
 
-`verify-anonymous.mjs` verifica rechazos reales de lectura sin sesión en la nueva base. Para las pruebas de integración con cuentas confirmadas, configura VITE_SUPABASE_URL y VITE_SUPABASE_PUBLISHABLE_KEY más TEST_PATIENT_EMAIL/PASSWORD, TEST_OTHER_PATIENT_EMAIL/PASSWORD, TEST_DOCTOR_EMAIL/PASSWORD y TEST_ADMIN_EMAIL/PASSWORD como variables de entorno locales. Ejecuta `node scripts/verify-integration.mjs`. No guardes esas contraseñas en Git.
+`verify-anonymous.mjs` verifica rechazos reales de lectura sin sesión en la nueva base. Para las pruebas de integración con cuentas de prueba, configura VITE_SUPABASE_URL y VITE_SUPABASE_PUBLISHABLE_KEY más TEST_PATIENT_EMAIL/PASSWORD, TEST_OTHER_PATIENT_EMAIL/PASSWORD, TEST_DOCTOR_EMAIL/PASSWORD y TEST_ADMIN_EMAIL/PASSWORD como variables de entorno locales. Ejecuta `node scripts/verify-integration.mjs`. No guardes esas contraseñas en Git.
 
 La prueba de integración modifica y restaura el nombre del paciente y deja una cita ficticia completada, a 120 días, como evidencia. Usa cuentas dedicadas de prueba. Comprueba persistencia, aislamiento, rechazo de escalada de rol, dos reservas concurrentes y transiciones por rol. No verifica entrega de correos, que requiere confirmar recepción en la bandeja del destinatario.
 
@@ -71,3 +71,4 @@ La prueba de integración modifica y restaura el nombre del paciente y deja una 
 - Chauca: `feature/autenticacion` no tenía avances sobre el login original al revisar; esta rama implementa la migración a Supabase Auth que faltaba.
 
 Los documentos en `docs/perfil-paciente` son evidencia histórica de la primera entrega. Sus capturas son simuladas y no prueban esta integración.
+
