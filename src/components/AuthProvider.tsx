@@ -74,40 +74,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
   const login = async (email: string, password: string): Promise<Result> => {
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-    if (error) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (error) {
+        setLoading(false);
+        return {
+          success: false,
+          error:
+            error.status === 429
+              ? "Demasiados intentos. Espera antes de volver a intentar."
+              : "Correo o contraseña incorrectos, o correo sin confirmar.",
+        };
+      }
+      await loadUser(data.user);
+      return { success: true };
+    } finally {
       setLoading(false);
-      return {
-        success: false,
-        error:
-          error.status === 429
-            ? "Demasiados intentos. Espera antes de volver a intentar."
-            : "Correo o contraseña incorrectos, o correo sin confirmar.",
-      };
     }
-    await loadUser(data.user);
-    return { success: true };
   };
   const register = async (data: RegisterData): Promise<Result> => {
     setLoading(true);
-    const { data: result, error } = await supabase.auth.signUp({
-      email: data.email.trim(),
-      password: data.password,
-      options: {
-        data: { name: data.name.trim(), phone: data.phone?.trim() },
-        emailRedirectTo: window.location.origin + "/auth",
-      },
-    });
-    if (error) {
+    try {
+      const { data: result, error } = await supabase.auth.signUp({
+        email: data.email.trim(),
+        password: data.password,
+        options: {
+          data: { name: data.name.trim(), phone: data.phone?.trim() },
+          emailRedirectTo: window.location.origin + "/auth",
+        },
+      });
+      if (error) {
+        setLoading(false);
+        return { success: false, error: error.message };
+      }
+      if (result.session) await loadUser(result.user);
+      else setLoading(false);
+      return { success: true, needsConfirmation: !result.session };
+    } finally {
       setLoading(false);
-      return { success: false, error: error.message };
     }
-    if (result.session) await loadUser(result.user);
-    else setLoading(false);
-    return { success: true, needsConfirmation: !result.session };
   };
   const logout = async () => {
     const { error } = await supabase.auth.signOut();

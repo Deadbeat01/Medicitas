@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 export default function Auth() {
-  const { user, login, register, isLoading } = useAuth();
+  const { user, login, register, isLoading, error: sessionError } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [show, setShow] = useState(false);
   const [message, setMessage] = useState("");
@@ -230,9 +230,9 @@ export default function Auth() {
                 <ArrowRight size={17} />
               </Button>
             </fieldset>
-            {error && (
+            {(error || sessionError) && (
               <p className="notice error" role="alert">
-                {error}
+                {error || sessionError}
               </p>
             )}
             {message && (

@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Activity, ArrowLeft, Mail } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, recoveryLinkState } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,10 +9,10 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [recovery, setRecovery] = useState(false);
+  const [recovery, setRecovery] = useState(recoveryLinkState.isRecovery);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(recoveryLinkState.error);
   useEffect(() => {
     const {
       data: { subscription },

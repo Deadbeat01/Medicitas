@@ -10,6 +10,7 @@ Fecha de trabajo: 18 de octubre de 2026, America/Lima.
 - Peticiones reales sin sesión a profiles, patients, appointments y medical_notes rechazadas con código 42501.
 - TypeScript, ESLint de todos los módulos modificados y compilación de producción sin errores.
 - Revisión visual del acceso en la aplicación local con el diseño nuevo.
+- Verificado en el panel de Supabase: Site URL localhost:8080 y las seis rutas exactas de confirmación, perfil y recuperación para localhost y 127.0.0.1 guardadas.
 
 ## Pendiente de comprobar con cuentas confirmadas
 
