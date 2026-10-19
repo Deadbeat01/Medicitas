@@ -70,8 +70,8 @@ La prueba de integración modifica y restaura el nombre del paciente y deja una 
 - Ángel: se integró `feature/perfil-paciente` y se sustituyó la sesión manual para permitir persistencia autorizada.
 - Chauca: `feature/autenticacion` no tenía avances sobre el login original al revisar; esta rama implementa la migración a Supabase Auth que faltaba.
 
-Los documentos en `docs/perfil-paciente` son evidencia histórica de la primera entrega. Sus capturas son simuladas y no prueban esta integración.
+Esta rama se entrega sin la carpeta de informes y capturas de pruebas.
 
 ## Ampliación del catálogo y temas
 
-El directorio compartido ahora incluye seis médicos habilitados, distribuidos en seis centros. Consulta docs/catalogo-demostracion.md. El acceso y los paneles incluyen un interruptor de modo claro/oscuro; la preferencia se mantiene al recargar. Las cuentas y datos adicionales son ficticios para la demostración universitaria.
+El directorio compartido ahora incluye seis médicos habilitados, distribuidos en seis centros. El acceso y los paneles incluyen un interruptor de modo claro/oscuro; la preferencia se mantiene al recargar. Las cuentas y datos adicionales son ficticios para la demostración universitaria.
