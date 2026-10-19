@@ -22,6 +22,7 @@ export default function App() {
       attribute="class"
       defaultTheme="light"
       enableSystem={false}
+      disableTransitionOnChange
     >
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
