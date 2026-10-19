@@ -74,4 +74,16 @@ La prueba de integración modifica y restaura el nombre del paciente y deja una 
 
 ## Ampliación del catálogo y temas
 
-El directorio compartido ahora incluye seis médicos habilitados, distribuidos en seis centros. El acceso y los paneles incluyen un interruptor de modo claro/oscuro; la preferencia se mantiene al recargar. Las cuentas y datos adicionales son ficticios para la demostración universitaria.
+El directorio compartido incluye 24 médicos ficticios habilitados, distribuidos en seis centros con cuatro médicos por sede. El acceso y los paneles incluyen un interruptor de modo claro/oscuro; la preferencia se mantiene al recargar. Las cuentas y datos adicionales son ficticios para la demostración universitaria.
+
+## Médicos por sede y organización de cuentas
+
+En Administración, la sección Médicos por sede permite consultar los equipos, buscar por nombre, correo o código MED, filtrar por sede y cambiar sede o especialidad mediante Guardar asignación. Se muestran ocho resultados por página. También se incluyen las cuentas médicas pendientes de asignación; para autorizar un profesional nuevo se utiliza Asignar un rol.
+
+Cada médico tiene una sede actual. Los cambios no modifican el centro guardado en las citas anteriores. La operación utiliza admin_assign_role, que comprueba el rol administrador en el servidor; un paciente no puede asignar médicos. No se cambió el esquema ni se relajaron políticas.
+
+Los códigos MED y USR son referencias derivadas del identificador UUID de cada cuenta; no son números de colegiatura. El identificador completo aparece al colocar el cursor sobre el código. En Cuentas registradas, la búsqueda funciona por nombre, correo o código y el registro muestra Hoy, Ayer o Hace X días, con fecha exacta en hora de Perú.
+
+El catálogo se amplió mediante 18 registros ficticios adicionales en el Supabase compartido. Las cuentas y sus contraseñas no forman parte de las migraciones ni del repositorio; los compañeros que usan el mismo Supabase verán el catálogo existente. En una base nueva hay que registrar las cuentas y asignarlas desde Administración.
+
+Para comprobar el catálogo y el rechazo de asignaciones desde un paciente, configura VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, TEST_PATIENT_EMAIL y TEST_PATIENT_PASSWORD y ejecuta node scripts/verify-directory.mjs.
