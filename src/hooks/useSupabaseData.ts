@@ -1,106 +1,133 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import type { Tables, TablesInsert } from "@/integrations/supabase/types";
-export type SupabaseAppointment = Tables<"appointments">;
-export type SupabaseDoctor = Tables<"doctors">;
-export type SupabaseSpecialty = Tables<"specialties">;
-export type SupabaseHospital = Tables<"hospitals">;
-export const useSpecialties = () =>
-  useQuery({
-    queryKey: ["specialties"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("specialties")
-        .select("*")
-        .order("name");
-      if (error) throw error;
-      return data;
-    },
-  });
-export const useHospitals = () =>
-  useQuery({
-    queryKey: ["hospitals"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("hospitals")
-        .select("*")
-        .order("name");
-      if (error) throw error;
-      return data;
-    },
-  });
-export const useDoctors = () =>
-  useQuery({
-    queryKey: ["doctors"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("doctors")
-        .select("*,specialty:specialties(name),hospital:hospitals(name)")
-        .eq("available", true)
-        .order("name");
-      if (error) throw error;
-      return data;
-    },
-  });
-export const useAppointments = () => {
-  const { user } = useAuth();
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Tables, TablesInsert } from '@/integrations/supabase/types';
+
+export type SupabaseAppointment = Tables<'appointments'>;
+export type SupabaseDoctor = Tables<'doctors'>;
+export type SupabaseSpecialty = Tables<'specialties'>;
+export type SupabaseHospital = Tables<'hospitals'>;
+
+// Hook para obtener especialidades
+export const useSpecialties = () => {
   return useQuery({
-    queryKey: ["appointments", user?.id],
-    enabled: !!user,
+    queryKey: ['specialties'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("appointments")
-        .select(
-          "*,doctor:doctors(name),specialty:specialties(name),hospital:hospitals(name)",
-        )
-        .order("appointment_date")
-        .order("appointment_time");
+        .from('specialties')
+        .select('*')
+        .order('name');
+      
       if (error) throw error;
       return data;
     },
   });
 };
-export const useCreateAppointment = () => {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: async (appointment: TablesInsert<"appointments">) => {
+
+// Hook para obtener hospitales
+export const useHospitals = () => {
+  return useQuery({
+    queryKey: ['hospitals'],
+    queryFn: async () => {
       const { data, error } = await supabase
-        .from("appointments")
+        .from('hospitals')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+// Hook para obtener doctores con especialidad
+export const useDoctors = () => {
+  return useQuery({
+    queryKey: ['doctors'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('doctors')
+        .select(`
+          *,
+          specialty:specialties(name),
+          hospital:hospitals(name)
+        `)
+        .eq('available', true)
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+// Hook para obtener citas
+export const useAppointments = () => {
+  return useQuery({
+    queryKey: ['appointments'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          doctor:doctors(name),
+          specialty:specialties(name),
+          hospital:hospitals(name)
+        `)
+        .not('status', 'in', '(cancelled,completed)') 
+        .order('appointment_date', { ascending: true })
+        .order('appointment_time', { ascending: true });
+
+      if (error) {
+        console.error("Error al obtener citas:", error);
+        throw error;
+      }
+
+      return data;
+    },
+  });
+};
+
+
+// Hook para crear citas
+export const useCreateAppointment = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (appointment: TablesInsert<'appointments'>) => {
+      const { data, error } = await supabase
+        .from('appointments')
         .insert(appointment)
         .select()
         .single();
+      
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      client.invalidateQueries({ queryKey: ["appointments"] });
-      client.invalidateQueries({ queryKey: ["patient-history"] });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
     },
   });
 };
+
+// Hook para actualizar estado de citas
 export const useUpdateAppointment = () => {
-  const client = useQueryClient();
+  const queryClient = useQueryClient();
+  
   return useMutation({
-    mutationFn: async ({
-      id,
-      status,
-    }: {
-      id: string;
-      status: SupabaseAppointment["status"];
-    }) => {
+    mutationFn: async ({ id, status }: { id: string; status: SupabaseAppointment['status'] }) => {
       const { data, error } = await supabase
-        .from("appointments")
+        .from('appointments')
         .update({ status })
-        .eq("id", id)
+        .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
+      
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      client.invalidateQueries({ queryKey: ["appointments"] });
-      client.invalidateQueries({ queryKey: ["patient-history"] });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
     },
   });
 };

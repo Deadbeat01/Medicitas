@@ -1,9 +1,1 @@
-project_id = "qpkvjnykirgfgdljqirl"
-
-[auth]
-site_url = "http://localhost:8080"
-additional_redirect_urls = ["http://localhost:8080/auth", "http://localhost:8080/perfil", "http://localhost:8080/recuperar", "http://127.0.0.1:8080/auth", "http://127.0.0.1:8080/perfil", "http://127.0.0.1:8080/recuperar"]
-minimum_password_length = 8
-
-[auth.email]
-enable_confirmations = false
+project_id = "yrnagxemssheonakclwe"

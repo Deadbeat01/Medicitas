@@ -1,255 +1,211 @@
-import { useState, type FormEvent } from "react";
-import { Link, Navigate } from "react-router-dom";
-import {
-  Activity,
-  ArrowRight,
-  ShieldCheck,
-  CalendarCheck,
-  Eye,
-  EyeOff,
-} from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-export default function Auth() {
-  const { user, login, register, isLoading, error: sessionError } = useAuth();
-  const [mode, setMode] = useState<"login" | "register">("login");
-  const [show, setShow] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [fields, setFields] = useState({
-    name: "",
-    email: "",
-    password: "",
-    phone: "",
-  });
-  if (user) return <Navigate to="/" replace />;
-  async function submit(e: FormEvent) {
+
+import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from '@/hooks/use-toast';
+import { User, Lock, Mail, Phone, UserPlus } from 'lucide-react';
+
+const Auth = () => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [userType, setUserType] = useState<'patient' | 'doctor'>('patient');
+  const { login, register, isLoading } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setMessage("");
-    try {
-      const result =
-        mode === "login"
-          ? await login(fields.email, fields.password)
-          : await register({ ...fields, userType: "patient" });
-      if (!result.success)
-        setError(result.error ?? "No se pudo completar la operación.");
-      else if (result.needsConfirmation)
-        setMessage(
-          "Cuenta creada. Revisa tu correo y confirma tu cuenta antes de ingresar.",
-        );
-    } catch {
-      setError(
-        "No pudimos conectarnos. Comprueba tu conexión e intenta nuevamente.",
-      );
+
+    if (!email || !password || !userType) {
+      toast({
+        title: "Error",
+        description: "Por favor, complete todos los campos requeridos",
+        variant: "destructive",
+      });
+      return;
     }
-  }
-  const update = (name: string, value: string) =>
-    setFields({ ...fields, [name]: value });
+
+    if (!isLogin && !name) {
+      toast({
+        title: "Error",
+        description: "El nombre es requerido para el registro",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    let result;
+    if (isLogin) {
+      result = await login(email, password, userType);
+    } else {
+      result = await register({
+        name,
+        email,
+        password,
+        phone,
+        userType
+      });
+    }
+    
+    if (result.success) {
+      toast({
+        title: isLogin ? "¡Bienvenido!" : "¡Registro exitoso!",
+        description: `${isLogin ? 'Sesión iniciada' : 'Usuario registrado'} como ${userType}`,
+      });
+      window.location.href = '/';
+    } else {
+      toast({
+        title: `Error de ${isLogin ? 'autenticación' : 'registro'}`,
+        description: result.error || `${isLogin ? 'Credenciales incorrectas' : 'Error al registrar usuario'}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setName('');
+    setPhone('');
+  };
+
+  const toggleMode = () => {
+    setIsLogin(!isLogin);
+    resetForm();
+  };
+
   return (
-    <div className="auth-layout">
-      <section className="auth-story">
-        <Link to="/auth" className="brand">
-          <span className="brand-symbol">
-            <Activity />
-          </span>
-          Medi<span>Citas</span>
-        </Link>
-        <div className="story-content">
-          <span className="eyebrow light">TU SALUD, MÁS CERCA</span>
-          <h1>
-            El cuidado que necesitas.
-            <br />
-            <span>La tranquilidad que mereces.</span>
-          </h1>
-          <p>
-            Organiza tus consultas, encuentra a tu especialista y lleva tu
-            atención médica en un solo lugar.
-          </p>
-          <div className="health-illustration" aria-hidden="true">
-            <div className="illustration-orbit" />
-            <div className="illustration-cross">+</div>
-            <div className="floating-card">
-              <CalendarCheck size={26} />
-              <div>
-                <strong>Todo en orden</strong>
-                <small>Tu próxima consulta, a un clic</small>
-              </div>
-              <span className="status-dot" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-xl">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold text-gray-800 flex items-center justify-center space-x-2">
+            <User className="h-6 w-6 text-blue-600" />
+            <span>MediCitas</span>
+          </CardTitle>
+          <CardDescription>
+            {isLogin ? 'Ingrese sus credenciales para acceder al sistema' : 'Registre una nueva cuenta'}
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="userType">Tipo de Usuario</Label>
+              <Select value={userType} onValueChange={(value: 'patient' | 'doctor') => setUserType(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccione tipo de usuario" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="patient">Paciente</SelectItem>
+                  <SelectItem value="doctor">Doctor</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="floating-pill">
-              <ShieldCheck size={17} />
-              Tu información, protegida
-            </div>
-          </div>
-          <div className="story-benefits">
-            <span>
-              <ShieldCheck size={18} />
-              Acceso seguro
-            </span>
-            <span>
-              <CalendarCheck size={18} />
-              Citas sin complicaciones
-            </span>
-          </div>
-        </div>
-        <p className="story-footer">MediCitas · Hecho para cuidar de ti</p>
-      </section>
-      <section className="auth-form-area">
-        <div className="auth-form-wrap">
-          <div className="auth-mobile-brand">
-            <Activity /> MediCitas
-          </div>
-          <span className="eyebrow">BIENVENIDO A TU ESPACIO DE SALUD</span>
-          <h2>
-            {mode === "login"
-              ? "Qué bueno verte de nuevo"
-              : "Empieza a cuidar de ti"}
-          </h2>
-          <p className="muted">
-            {mode === "login"
-              ? "Ingresa a tu cuenta para continuar."
-              : "Crea tu cuenta de paciente en pocos pasos."}
-          </p>
-          <div className="auth-tabs">
-            <button
-              onClick={() => {
-                setMode("login");
-                setError("");
-                setMessage("");
-              }}
-              className={mode === "login" ? "selected" : ""}
-            >
-              Iniciar sesión
-            </button>
-            <button
-              onClick={() => {
-                setMode("register");
-                setError("");
-                setMessage("");
-              }}
-              className={mode === "register" ? "selected" : ""}
-            >
-              Crear cuenta
-            </button>
-          </div>
-          <form onSubmit={submit} className="space-y-5">
-            <fieldset disabled={isLoading} className="space-y-5">
-              {mode === "register" && (
-                <div className="field">
-                  <Label htmlFor="name">Nombre completo</Label>
+
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="name">Nombre Completo</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
                     id="name"
-                    autoComplete="name"
-                    required
-                    minLength={2}
-                    maxLength={100}
-                    value={fields.name}
-                    onChange={(e) => update("name", e.target.value)}
-                    placeholder="¿Cómo te llamas?"
+                    type="text"
+                    placeholder="Ingrese su nombre completo"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="pl-10"
+                    required={!isLogin}
                   />
                 </div>
-              )}
-              <div className="field">
-                <Label htmlFor="email">Correo electrónico</Label>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Correo Electrónico</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   id="email"
                   type="email"
-                  autoComplete="email"
+                  placeholder="Ingrese su email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10"
                   required
-                  value={fields.email}
-                  onChange={(e) => update("email", e.target.value)}
-                  placeholder="nombre@correo.com"
                 />
               </div>
-              <div className="field">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Contraseña</Label>
-                  {mode === "login" && (
-                    <Link
-                      className="text-sm text-teal-700 font-medium"
-                      to="/recuperar"
-                    >
-                      ¿Olvidaste tu contraseña?
-                    </Link>
-                  )}
-                </div>
-                <div className="relative">
-                  <Input
-                    className="pr-12"
-                    id="password"
-                    type={show ? "text" : "password"}
-                    autoComplete={
-                      mode === "login" ? "current-password" : "new-password"
-                    }
-                    required
-                    minLength={mode === "register" ? 8 : 1}
-                    value={fields.password}
-                    onChange={(e) => update("password", e.target.value)}
-                    placeholder={
-                      mode === "register"
-                        ? "Mínimo 8 caracteres"
-                        : "Tu contraseña"
-                    }
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShow(!show)}
-                    aria-label={
-                      show ? "Ocultar contraseña" : "Mostrar contraseña"
-                    }
-                    className="absolute right-3 top-3 text-slate-400"
-                  >
-                    {show ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Contraseña</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Ingrese su contraseña"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10"
+                  required
+                />
               </div>
-              {mode === "register" && (
-                <div className="field">
-                  <Label htmlFor="phone">Teléfono opcional</Label>
+            </div>
+
+            {!isLogin && userType === 'patient' && (
+              <div className="space-y-2">
+                <Label htmlFor="phone">Teléfono (Opcional)</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
                     id="phone"
                     type="tel"
-                    autoComplete="tel"
-                    maxLength={25}
-                    pattern="[+0-9 ()-]{7,25}"
-                    value={fields.phone}
-                    onChange={(e) => update("phone", e.target.value)}
-                    placeholder="+51 999 000 000"
+                    placeholder="Ingrese su teléfono"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="pl-10"
                   />
                 </div>
+              </div>
+            )}
+
+            <Button 
+              type="submit" 
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                  <span>{isLogin ? 'Iniciando sesión...' : 'Registrando...'}</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  {isLogin ? <User className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+                  <span>{isLogin ? 'Iniciar Sesión' : 'Registrarse'}</span>
+                </div>
               )}
-              <Button className="w-full h-12" type="submit">
-                {isLoading
-                  ? "Un momento..."
-                  : mode === "login"
-                    ? "Ingresar a mi cuenta"
-                    : "Crear mi cuenta"}
-                <ArrowRight size={17} />
-              </Button>
-            </fieldset>
-            {(error || sessionError) && (
-              <p className="notice error" role="alert">
-                {error || sessionError}
-              </p>
-            )}
-            {message && (
-              <p className="notice" role="status">
-                {message}
-              </p>
-            )}
+            </Button>
           </form>
-          <p className="auth-help">
-            <ShieldCheck size={16} /> La cuenta determina tu rol de acceso. El
-            registro público es exclusivo para pacientes.
-          </p>
-        </div>
-        <p className="auth-bottom">
-          Tu bienestar comienza con una buena atención.
-        </p>
-      </section>
+
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={toggleMode}
+              className="text-blue-600 hover:text-blue-700 text-sm underline"
+            >
+              {isLogin ? '¿No tienes cuenta? Regístrate aquí' : '¿Ya tienes cuenta? Inicia sesión aquí'}
+            </button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
+
+export default Auth;
