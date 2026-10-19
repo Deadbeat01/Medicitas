@@ -1,32 +1,55 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import PatientProfile from "./pages/PatientProfile";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import NotFound from "./pages/NotFound";
-
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/perfil" element={<PatientProfile />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/" element={<Dashboard />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
-
-export default App;
+import { AuthProvider } from "@/components/AuthProvider";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import AppLayout from "@/components/AppLayout";
+import Auth from "@/pages/Auth";
+import Dashboard from "@/pages/Dashboard";
+import PatientProfile from "@/pages/PatientProfile";
+import ForgotPassword from "@/pages/ForgotPassword";
+import AdminDashboard from "@/pages/AdminDashboard";
+import NotFound from "@/pages/NotFound";
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: 1, staleTime: 15000 } },
+});
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/recuperar" element={<ForgotPassword />} />
+              <Route element={<ProtectedRoute />}>
+                <Route element={<AppLayout />}>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route
+                    path="/citas"
+                    element={<Dashboard view="appointments" />}
+                  />
+                  <Route element={<ProtectedRoute roles={["patient"]} />}>
+                    <Route
+                      path="/agendar"
+                      element={<Dashboard view="book" />}
+                    />
+                    <Route path="/perfil" element={<PatientProfile />} />
+                  </Route>
+                  <Route element={<ProtectedRoute roles={["admin"]} />}>
+                    <Route path="/admin" element={<AdminDashboard />} />
+                  </Route>
+                </Route>
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}

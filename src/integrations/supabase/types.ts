@@ -7,10 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "14.18"
   }
   public: {
     Tables: {
@@ -19,48 +19,48 @@ export type Database = {
           appointment_date: string
           appointment_time: string
           created_at: string | null
-          doctor_id: string | null
+          doctor_id: string
           email: string
-          hospital_id: string | null
+          hospital_id: string
           id: string
-          patient_id: string | null
+          patient_id: string
           patient_name: string
           phone: string
-          reason: string | null
-          specialty_id: string | null
-          status: Database["public"]["Enums"]["appointment_status"] | null
+          reason: string
+          specialty_id: string
+          status: Database["public"]["Enums"]["appointment_status"]
           updated_at: string | null
         }
         Insert: {
           appointment_date: string
           appointment_time: string
           created_at?: string | null
-          doctor_id?: string | null
+          doctor_id: string
           email: string
-          hospital_id?: string | null
+          hospital_id: string
           id?: string
-          patient_id?: string | null
+          patient_id: string
           patient_name: string
-          phone: string
-          reason?: string | null
-          specialty_id?: string | null
-          status?: Database["public"]["Enums"]["appointment_status"] | null
+          phone?: string
+          reason: string
+          specialty_id: string
+          status?: Database["public"]["Enums"]["appointment_status"]
           updated_at?: string | null
         }
         Update: {
           appointment_date?: string
           appointment_time?: string
           created_at?: string | null
-          doctor_id?: string | null
+          doctor_id?: string
           email?: string
-          hospital_id?: string | null
+          hospital_id?: string
           id?: string
-          patient_id?: string | null
+          patient_id?: string
           patient_name?: string
           phone?: string
-          reason?: string | null
-          specialty_id?: string | null
-          status?: Database["public"]["Enums"]["appointment_status"] | null
+          reason?: string
+          specialty_id?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
           updated_at?: string | null
         }
         Relationships: [
@@ -96,40 +96,37 @@ export type Database = {
       }
       doctors: {
         Row: {
-          available: boolean | null
+          available: boolean
           created_at: string | null
           email: string
           hospital_id: string | null
           id: string
           name: string
-          password: string | null
           specialty_id: string | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
-          available?: boolean | null
+          available?: boolean
           created_at?: string | null
           email: string
           hospital_id?: string | null
-          id?: string
+          id: string
           name: string
-          password?: string | null
           specialty_id?: string | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
-          available?: boolean | null
+          available?: boolean
           created_at?: string | null
           email?: string
           hospital_id?: string | null
           id?: string
           name?: string
-          password?: string | null
           specialty_id?: string | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -137,6 +134,13 @@ export type Database = {
             columns: ["hospital_id"]
             isOneToOne: false
             referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doctors_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -149,7 +153,7 @@ export type Database = {
           {
             foreignKeyName: "doctors_user_id_fkey"
             columns: ["user_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -179,42 +183,88 @@ export type Database = {
         }
         Relationships: []
       }
+      medical_notes: {
+        Row: {
+          body: string
+          created_at: string
+          doctor_id: string
+          id: string
+          is_demo: boolean
+          patient_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          doctor_id: string
+          id?: string
+          is_demo?: boolean
+          patient_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          doctor_id?: string
+          id?: string
+          is_demo?: boolean
+          patient_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_notes_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_notes_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patients: {
         Row: {
           created_at: string | null
           email: string
           id: string
           name: string
-          password: string
           phone: string | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
           email: string
-          id?: string
+          id: string
           name: string
-          password: string
           phone?: string | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string | null
           email?: string
           id?: string
           name?: string
-          password?: string
           phone?: string | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
+            foreignKeyName: "patients_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "patients_user_id_fkey"
             columns: ["user_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -222,24 +272,30 @@ export type Database = {
       }
       profiles: {
         Row: {
-          created_at: string | null
+          created_at: string
           email: string
           id: string
-          updated_at: string | null
+          name: string
+          phone: string | null
+          updated_at: string
           user_type: Database["public"]["Enums"]["user_type"]
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           email: string
           id: string
-          updated_at?: string | null
+          name: string
+          phone?: string | null
+          updated_at?: string
           user_type?: Database["public"]["Enums"]["user_type"]
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           email?: string
           id?: string
-          updated_at?: string | null
+          name?: string
+          phone?: string | null
+          updated_at?: string
           user_type?: Database["public"]["Enums"]["user_type"]
         }
         Relationships: []
@@ -270,11 +326,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_assign_role: {
+        Args: {
+          hospital?: string
+          new_role: Database["public"]["Enums"]["user_type"]
+          specialty?: string
+          target_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       appointment_status: "pending" | "confirmed" | "completed" | "cancelled"
-      user_type: "patient" | "doctor"
+      user_type: "patient" | "doctor" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -290,12 +354,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -319,11 +383,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -344,11 +408,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -369,11 +433,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -386,11 +450,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -403,7 +467,7 @@ export const Constants = {
   public: {
     Enums: {
       appointment_status: ["pending", "confirmed", "completed", "cancelled"],
-      user_type: ["patient", "doctor"],
+      user_type: ["patient", "doctor", "admin"],
     },
   },
 } as const
