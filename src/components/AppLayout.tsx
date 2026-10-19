@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   Activity,
   CalendarDays,
@@ -11,9 +11,25 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
+import ThemeToggle from "@/components/ThemeToggle";
 export default function AppLayout() {
   const { user, logout } = useAuth();
   const [error, setError] = useState("");
+  const [isLoggingOut, setLoggingOut] = useState(false);
+  const navigate = useNavigate();
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setError("");
+    setLoggingOut(true);
+    try {
+      await logout();
+      navigate("/auth", { replace: true });
+    } catch {
+      setError("No se pudo cerrar sesión. Revisa tu conexión e intenta de nuevo.");
+    } finally {
+      setLoggingOut(false);
+    }
+  };
   if (!user) return null;
   const role = {
     patient: "Paciente",
@@ -70,14 +86,14 @@ export default function AppLayout() {
           </div>
           <button
             className="nav-item logout"
-            onClick={() =>
-              void logout().catch(() =>
-                setError("No se pudo cerrar sesión. Intenta de nuevo."),
-              )
-            }
+            onClick={() => void handleLogout()}
+            disabled={isLoggingOut}
+            aria-label={isLoggingOut ? "Cerrando sesión" : "Cerrar sesión"}
+            aria-busy={isLoggingOut}
+            title="Cerrar sesión"
           >
             <LogOut size={18} />
-            Cerrar sesión
+            {isLoggingOut ? "Cerrando sesión…" : "Cerrar sesión"}
           </button>
           {error && <p role="alert">{error}</p>}
         </div>
@@ -89,6 +105,7 @@ export default function AppLayout() {
             <p>Tu salud merece un lugar especial</p>
           </div>
           <div className="topbar-account">
+            <ThemeToggle />
             <span className="account-role">
               <ShieldCheck size={15} />
               {role}
