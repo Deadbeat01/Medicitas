@@ -70,7 +70,7 @@ La prueba de integración modifica y restaura el nombre del paciente y deja una 
 - Ángel: se integró `feature/perfil-paciente` y se sustituyó la sesión manual para permitir persistencia autorizada.
 - Chauca: `feature/autenticacion` no tenía avances sobre el login original al revisar; esta rama implementa la migración a Supabase Auth que faltaba.
 
-Esta rama se entrega sin la carpeta de informes y capturas de pruebas.
+
 
 ## Ampliación del catálogo y temas
 
