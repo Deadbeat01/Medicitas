@@ -39,3 +39,7 @@ Referencia: https://supabase.com/docs/guides/database/database-linter?lint=0029_
 Vite informa avisos de tamaño del paquete y datos de Browserslist antiguos. No impiden compilar. No hay envío automático de recordatorios; el alcance original solicita preparar una plantilla.
 
 La versión anterior docs/perfil-paciente conserva evidencia histórica de una entrega con capturas simuladas. El informe de integración nuevo sustituye esa evidencia para evaluar la aplicación actual.
+
+## Ampliación posterior
+
+Verificados seis médicos disponibles, con roles doctor, especialidad y centro asignados, y seis centros en Supabase. Se añadieron cinco cuentas ficticias y cuatro centros; sus contraseñas aleatorias permanecen fuera de Git. Interruptor de tema comprobado en el panel y preferencia oscura conservada tras recargar; captura en outputs para la entrega local. TypeScript y ESLint de los archivos del tema sin errores.
