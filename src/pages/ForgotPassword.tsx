@@ -5,6 +5,7 @@ import { supabase, recoveryLinkState } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import ThemeToggle from "@/components/ThemeToggle";
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -55,6 +56,9 @@ export default function ForgotPassword() {
   }
   return (
     <main className="recovery-page">
+      <div className="public-theme-toggle">
+        <ThemeToggle />
+      </div>
       <section className="recovery-card">
         <Link to="/auth" className="brand text-slate-900">
           <span className="brand-symbol">

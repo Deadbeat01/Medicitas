@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import ThemeToggle from "@/components/ThemeToggle";
 export default function Auth() {
   const { user, login, register, isLoading, error: sessionError } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -50,6 +51,9 @@ export default function Auth() {
     setFields({ ...fields, [name]: value });
   return (
     <div className="auth-layout">
+      <div className="public-theme-toggle">
+        <ThemeToggle />
+      </div>
       <section className="auth-story">
         <Link to="/auth" className="brand">
           <span className="brand-symbol">

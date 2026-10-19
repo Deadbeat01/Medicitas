@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, clearBrowserSession } from "@/integrations/supabase/client";
 import type { User as AuthUser } from "@supabase/supabase-js";
 import {
   AuthContext,
@@ -24,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const request = ++revision.current;
     if (!authUser) {
       setUser(null);
+      setError("");
       setLoading(false);
       return;
     }
@@ -49,22 +50,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
   useEffect(() => {
+    const requestRevision = revision;
     localStorage.removeItem("user");
+    let active = true;
+    let eventRevision = 0;
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      const event = ++eventRevision;
+      // Invalidate profile requests immediately, before deferred auth work runs.
+      ++requestRevision.current;
       setTimeout(() => {
+        if (!active || event !== eventRevision) return;
         queryClient.clear();
         void loadUser(session?.user ?? null);
       }, 0);
     });
     void supabase.auth.getSession().then(({ data, error }) => {
+      if (!active || eventRevision > 0) return;
       if (error) {
         setError("No se pudo recuperar la sesión.");
         setLoading(false);
       } else void loadUser(data.session?.user ?? null);
     });
     return () => {
+      active = false;
+      ++requestRevision.current;
       subscription.unsubscribe();
     };
   }, [loadUser, queryClient]);
@@ -118,9 +129,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
   const logout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const { error } = await Promise.race([
+        supabase.auth.signOut({ scope: "local" }),
+        new Promise<never>((_resolve, reject) => {
+          timeout = setTimeout(() => reject(new Error("Logout timeout")), 8000);
+        }),
+      ]);
+      if (error) throw error;
+    } catch {
+      clearBrowserSession();
+    } finally {
+      clearTimeout(timeout);
+    }
+    ++revision.current;
     setUser(null);
+    setError("");
+    setLoading(false);
     queryClient.clear();
   };
   return (

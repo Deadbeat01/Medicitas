@@ -125,6 +125,25 @@
     outline-offset: 3px;
   }
 }
+/* Selector de tema en páginas públicas */
+.public-theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  z-index: 30;
+}
+
+.theme-toggle {
+  border-radius: 9px;
+}
+
+/* Adaptación para celulares */
+@media (max-width: 760px) {
+  .public-theme-toggle {
+    top: 15px;
+    right: 18px;
+  }
+}
 .brand {
   display: flex;
   align-items: center;
