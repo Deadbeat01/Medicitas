@@ -14,8 +14,18 @@ if (!url || !key)
   throw new Error(
     "Copia .env.example a .env.local antes de iniciar MediCitas.",
   );
+const storageKey = `sb-${new URL(url).hostname.split(".")[0]}-auth-token`;
+// Reload discards the SDK's in-memory session as well as outstanding requests.
+// This fallback signs out this browser; it does not claim server-side revocation.
+export function clearBrowserSession() {
+  localStorage.removeItem(storageKey);
+  localStorage.removeItem(`${storageKey}-code-verifier`);
+  localStorage.removeItem(`${storageKey}-user`);
+  window.location.replace("/auth");
+}
 export const supabase = createClient<Database>(url, key, {
   auth: {
+    storageKey,
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,

@@ -12,11 +12,18 @@ import PatientProfile from "@/pages/PatientProfile";
 import ForgotPassword from "@/pages/ForgotPassword";
 import AdminDashboard from "@/pages/AdminDashboard";
 import NotFound from "@/pages/NotFound";
+import { ThemeProvider } from "next-themes";
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 15000 } },
 });
 export default function App() {
   return (
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="light"
+      enableSystem={false}
+      disableTransitionOnChange
+    >
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
@@ -51,5 +58,6 @@ export default function App() {
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
+   </ThemeProvider> 
   );
 }

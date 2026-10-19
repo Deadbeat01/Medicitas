@@ -125,6 +125,25 @@
     outline-offset: 3px;
   }
 }
+/* Selector de tema en páginas públicas */
+.public-theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  z-index: 30;
+}
+
+.theme-toggle {
+  border-radius: 9px;
+}
+
+/* Adaptación para celulares */
+@media (max-width: 760px) {
+  .public-theme-toggle {
+    top: 15px;
+    right: 18px;
+  }
+}
 .brand {
   display: flex;
   align-items: center;
@@ -1144,5 +1163,211 @@
   }
   .booking-info {
     display: none;
+  }
+}
+
+.dark {
+  color-scheme: dark;
+  --background: 215 28% 10%;
+  --foreground: 210 25% 91%;
+  --card: 215 25% 14%;
+  --card-foreground: 210 25% 91%;
+  --popover: 215 25% 14%;
+  --popover-foreground: 210 25% 91%;
+  --primary: 170 55% 48%;
+  --primary-foreground: 170 70% 6%;
+  --secondary: 215 23% 19%;
+  --secondary-foreground: 210 25% 91%;
+  --muted: 215 23% 19%;
+  --muted-foreground: 215 15% 65%;
+  --accent: 215 23% 22%;
+  --accent-foreground: 210 25% 91%;
+  --border: 215 20% 24%;
+  --input: 215 20% 28%;
+  --ring: 170 55% 48%;
+}
+.dark .app-layout,
+.dark .recovery-page {
+  background: #111923;
+}
+.dark .app-sidebar,
+.dark .app-topbar,
+.dark .surface,
+.dark .stat-card,
+.dark .appointment-row,
+.dark .recovery-card,
+.dark .auth-form-area,
+.dark .empty-state {
+  background: #1a2531;
+  border-color: #2a3948;
+}
+.dark .app-sidebar .brand,
+.dark .auth-mobile-brand {
+  color: #dceee9;
+}
+.dark .app-topbar p,
+.dark .page-heading h1,
+.dark .section-heading h2,
+.dark .card-heading,
+.dark .appointment-details h3,
+.dark .profile-summary h2,
+.dark .auth-form-wrap h2,
+.dark .recovery-card h1 {
+  color: #e4edf3;
+}
+.dark .muted,
+.dark .page-heading > p,
+.dark .section-heading p,
+.dark .appointment-details > p,
+.dark .nav-item,
+.dark .stat-card p,
+.dark .auth-help,
+.dark .auth-bottom {
+  color: #a0b2bf;
+}
+.dark .nav-item.active {
+  color: #89dec5;
+  background: #193f3b;
+}
+.dark .nav-item:hover {
+  color: #a0e7d0;
+  background: #233a3d;
+}
+.dark .care-note,
+.dark .booking-info {
+  background: #1b3432;
+  border-color: #31524c;
+  color: #a4cfbe;
+}
+.dark .care-note strong {
+  color: #c4e4d8;
+}
+.dark .care-note p {
+  color: #9dc2b3;
+}
+.dark .field input,
+.dark .form-select {
+  background: #121e29;
+  color: #e0e9ef;
+  border-color: #3a4d5d;
+}
+.dark .form-select:disabled {
+  background: #202c36;
+  color: #80939d;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #8597a5;
+}
+.dark input:-webkit-autofill {
+  -webkit-text-fill-color: #e4edf3;
+  box-shadow: 0 0 0 1000px #1c303b inset;
+}
+.dark .auth-tabs {
+  background: #111d27;
+}
+.dark .auth-tabs button.selected {
+  background: #2b413f;
+  color: #a5eed6;
+}
+.dark .auth-tabs button {
+  color: #9caeb8;
+}
+.dark .auth-help,
+.dark .profile-secure,
+.dark .app-footer,
+.dark .users-table td {
+  border-color: #2a3948;
+}
+.dark .users-table th {
+  background: #14212c;
+  color: #a6b7c4;
+}
+.dark .notice {
+  background: #163b32;
+  color: #b3e5d1;
+  border-color: #2e5f4f;
+}
+.dark .notice.error {
+  background: #3f272d;
+  color: #ffb8b8;
+  border-color: #71434d;
+}
+.dark .role-badge,
+.dark .account-role,
+.dark .avatar,
+.dark .profile-avatar,
+.dark .appointment-date,
+.dark .recovery-icon {
+  background: #24473f;
+  color: #a4e2ca;
+}
+.dark .appointment-date strong {
+  color: #a6e9d2;
+}
+.dark .appointment-date span {
+  color: #b2cec3;
+}
+.dark .teal {
+  background: #25483e;
+  color: #a0ddc4;
+}
+.dark .amber {
+  background: #443a27;
+  color: #e4c686;
+}
+.dark .blue {
+  background: #293b54;
+  color: #acccf2;
+}
+.dark .appointment-filters button {
+  color: #afbec9;
+}
+.dark .appointment-filters button.selected {
+  background: #25473e;
+  color: #a1e1c9;
+  border-color: #43725f;
+}
+.dark .status-pending {
+  color: #efd092;
+  background: #453b29;
+  border-color: #6c5c38;
+}
+.dark .status-confirmed {
+  color: #aae8cd;
+  background: #234b3f;
+  border-color: #3a705e;
+}
+.dark .status-completed {
+  color: #b4d5fc;
+  background: #293e59;
+  border-color: #426388;
+}
+.dark .status-cancelled {
+  color: #f7b8be;
+  background: #472d37;
+  border-color: #704451;
+}
+.dark .text-teal-700 {
+  color: #8cdebf;
+}
+.dark .text-red-600,
+.dark .field-error {
+  color: #f6a8a8;
+}
+.dark .text-slate-500,
+.dark .text-slate-400 {
+  color: #a2b4c1;
+}
+@media (max-width: 760px) {
+  .topbar-account .theme-toggle span {
+    display: none;
+  }
+  .topbar-account {
+    gap: 8px;
+  }
+  .public-theme-toggle {
+    top: 15px;
+    right: 18px;
   }
 }
