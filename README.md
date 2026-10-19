@@ -16,7 +16,7 @@ Abre http://localhost:8080. La clave de `.env.example` es pública y solo permit
 
 ## Funciones
 
-- Inicio de sesión y registro de pacientes con Supabase Auth, registro directo sin confirmación de correo para la demostración universitaria y sesión compartida entre pantallas. No se almacenan contraseñas en tablas públicas.
+- Inicio de sesión y registro de pacientes con Supabase Auth, registro directo sin confirmación de correo  y sesión compartida entre pantallas. No se almacenan contraseñas en tablas públicas.
 - Recuperación por enlace y actualización de contraseña. El enlace debe regresar a `/recuperar`.
 - Reservas con validación de motivo entre 10 y 300 caracteres, fecha futura, médico y centro correspondientes, y unicidad de horarios activos en la base.
 - El médico asignado confirma, completa o cancela sus citas; el paciente solo puede cancelar sus reservas activas.
@@ -31,7 +31,7 @@ Abre http://localhost:8080. La clave de `.env.example` es pública y solo permit
 Proyecto: `qpkvjnykirgfgdljqirl`, región São Paulo. No utiliza el proyecto anterior de Chauca.
 
 1. En Supabase Authentication → URL Configuration, fija Site URL en `http://localhost:8080` y agrega como Redirect URLs `http://localhost:8080/auth`, `http://localhost:8080/recuperar` y `http://localhost:8080/perfil`. Para usar 127.0.0.1, agrega también esas tres rutas con ese host.
-2. Para esta demostración universitaria, Confirm email está desactivado: las cuentas nuevas ingresan directamente con correo y contraseña. Para recuperación y cambios de correo sigue siendo necesario recibir mensajes; configura SMTP propio si necesitas enviarlos a integrantes distintos del propietario.
+2.  Confirm email está desactivado: las cuentas nuevas ingresan directamente con correo y contraseña. Para recuperación y cambios de correo sigue siendo necesario recibir mensajes; configura SMTP propio si necesitas enviarlos a integrantes distintos del propietario.
 3. Crea una cuenta desde la aplicación. El primer administrador lo autoriza el propietario en SQL Editor, usando el ID de su propia cuenta. No hay cuentas ni contraseñas universales de demostración.
 
 ```sql
