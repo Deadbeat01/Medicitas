@@ -1,0 +1,569 @@
+diff --git a/src/components/AppointmentCard.tsx b/src/components/AppointmentCard.tsx
+new file mode 100644
+index 0000000..bc39e05
+--- /dev/null
++++ b/src/components/AppointmentCard.tsx
+@@ -0,0 +1,112 @@
++import type { User } from "@/hooks/useAuth";
++import { Button } from "@/components/ui/button";
++import { MapPin, Clock3, Check, X, FileText } from "lucide-react";
++import AppointmentEmailTemplate from "@/components/AppointmentEmailTemplate";
++import AppointmentStatusBadge from "@/components/AppointmentStatusBadge";
++import {
++  isActiveAppointment,
++  type AppointmentListItem,
++  type AppointmentStatus,
++} from "@/lib/appointment-presentation";
++
++interface AppointmentCardProps {
++  appointment: AppointmentListItem;
++  userType: User["userType"];
++  isUpdating: boolean;
++  isPreviewOpen: boolean;
++  onStatusChange: (
++    id: string,
++    status: Exclude<AppointmentStatus, "pending">,
++  ) => void;
++  onTogglePreview: () => void;
++}
++
++export default function AppointmentCard({
++  appointment,
++  userType,
++  isUpdating,
++  isPreviewOpen,
++  onStatusChange,
++  onTogglePreview,
++}: AppointmentCardProps) {
++  return (
++    <article className="appointment-row">
++      <div className="appointment-date">
++        <strong>{appointment.appointment_date.slice(-2)}</strong>
++        <span>
++          {new Date(
++            appointment.appointment_date + "T12:00:00",
++          ).toLocaleDateString("es-PE", {
++            month: "short",
++            year: "numeric",
++          })}
++        </span>
++      </div>
++      <div className="appointment-details">
++        <div className="flex flex-wrap gap-3 items-center">
++          <h3>{appointment.specialty?.name ?? "Consulta médica"}</h3>
++          <AppointmentStatusBadge
++            status={appointment.status}
++            className={"status-" + appointment.status}
++          />
++        </div>
++        <p>
++          {appointment.doctor?.name}
++          {userType === "doctor" ? " · " + appointment.patient_name : ""}
++        </p>
++        <div className="appointment-meta">
++          <span>
++            <Clock3 size={14} />
++            {appointment.appointment_time.slice(0, 5)}
++          </span>
++          <span>
++            <MapPin size={14} />
++            {appointment.hospital?.name}
++          </span>
++        </div>
++        <p className="text-sm mt-2 text-slate-500">{appointment.reason}</p>
++      </div>
++      <div className="appointment-actions">
++        {appointment.status === "pending" && userType === "doctor" && (
++            <Button
++              size="sm"
++              disabled={isUpdating}
++              onClick={() => onStatusChange(appointment.id, "confirmed")}
++            >
++              <Check size={15} />
++              Confirmar
++            </Button>
++        )}
++        {appointment.status === "confirmed" && userType === "doctor" && (
++            <Button
++              size="sm"
++              disabled={isUpdating}
++              onClick={() => onStatusChange(appointment.id, "completed")}
++            >
++              Completar
++            </Button>
++        )}
++        {isActiveAppointment(appointment.status) && (
++          <Button
++            size="sm"
++            variant="outline"
++            disabled={isUpdating}
++            onClick={() => onStatusChange(appointment.id, "cancelled")}
++          >
++            <X size={14} />
++            Cancelar
++          </Button>
++        )}
++        <Button variant="ghost" size="sm" onClick={onTogglePreview}>
++          <FileText size={15} />
++          Comprobante
++        </Button>
++      </div>
++      {isPreviewOpen && (
++        <div className="w-full basis-full">
++          <AppointmentEmailTemplate appointment={appointment} />
++        </div>
++      )}
++    </article>
++  );
++}
+diff --git a/src/components/AppointmentEmailTemplate.tsx b/src/components/AppointmentEmailTemplate.tsx
+index c65eae8..920487c 100644
+--- a/src/components/AppointmentEmailTemplate.tsx
++++ b/src/components/AppointmentEmailTemplate.tsx
+@@ -1,8 +1,8 @@
+-import { useAppointments } from "@/hooks/useSupabaseData";
++import type { AppointmentListItem } from "@/lib/appointment-presentation";
+ export default function AppointmentEmailTemplate({
+   appointment,
+ }: {
+-  appointment: NonNullable<ReturnType<typeof useAppointments>["data"]>[number];
++  appointment: AppointmentListItem;
+ }) {
+   return (
+     <div className="notice mt-4">
+diff --git a/src/components/AppointmentStatusBadge.tsx b/src/components/AppointmentStatusBadge.tsx
+new file mode 100644
+index 0000000..64358ae
+--- /dev/null
++++ b/src/components/AppointmentStatusBadge.tsx
+@@ -0,0 +1,23 @@
++import { Badge, type BadgeProps } from "@/components/ui/badge";
++import {
++  appointmentStatusLabels,
++  type AppointmentStatus,
++} from "@/lib/appointment-presentation";
++
++interface AppointmentStatusBadgeProps {
++  status: AppointmentStatus | null;
++  variant?: BadgeProps["variant"];
++  className?: string;
++}
++
++export default function AppointmentStatusBadge({
++  status,
++  variant = "outline",
++  className,
++}: AppointmentStatusBadgeProps) {
++  return (
++    <Badge variant={variant} className={className}>
++      {status ? appointmentStatusLabels[status] : "Sin estado"}
++    </Badge>
++  );
++}
+diff --git a/src/components/AppointmentsListWithSupabase.tsx b/src/components/AppointmentsListWithSupabase.tsx
+index f26cc3c..676c78a 100644
+--- a/src/components/AppointmentsListWithSupabase.tsx
++++ b/src/components/AppointmentsListWithSupabase.tsx
+@@ -2,15 +2,13 @@ import { useState } from "react";
+ import type { User } from "@/hooks/useAuth";
+ import { useAppointments, useUpdateAppointment } from "@/hooks/useSupabaseData";
+ import { Button } from "@/components/ui/button";
+-import { CalendarDays, MapPin, Clock3, Check, X, FileText } from "lucide-react";
+-import { Badge } from "@/components/ui/badge";
+-import AppointmentEmailTemplate from "@/components/AppointmentEmailTemplate";
+-const labels = {
+-  pending: "Pendiente",
+-  confirmed: "Confirmada",
+-  completed: "Completada",
+-  cancelled: "Cancelada",
+-};
++import { CalendarDays } from "lucide-react";
++import AppointmentCard from "@/components/AppointmentCard";
++import {
++  appointmentFilters,
++  filterAppointments,
++  type AppointmentFilter,
++} from "@/lib/appointment-presentation";
+ export default function AppointmentsListWithSupabase({
+   currentUser,
+ }: {
+@@ -18,7 +16,7 @@ export default function AppointmentsListWithSupabase({
+ }) {
+   const appointments = useAppointments();
+   const update = useUpdateAppointment();
+-  const [filter, setFilter] = useState("active");
++  const [filter, setFilter] = useState<AppointmentFilter>("active");
+   const [error, setError] = useState("");
+   const [preview, setPreview] = useState<string | null>(null);
+   async function change(
+@@ -49,22 +47,11 @@ export default function AppointmentsListWithSupabase({
+         </Button>
+       </div>
+     );
+-  const rows = appointments.data.filter(
+-    (a) =>
+-      filter === "all" ||
+-      (filter === "active"
+-        ? ["pending", "confirmed"].includes(a.status)
+-        : a.status === filter),
+-  );
++  const rows = filterAppointments(appointments.data, filter);
+   return (
+     <section>
+       <div className="appointment-filters" aria-label="Filtrar citas">
+-        {[
+-          { id: "active", name: "Activas" },
+-          { id: "completed", name: "Completadas" },
+-          { id: "cancelled", name: "Canceladas" },
+-          { id: "all", name: "Todas" },
+-        ].map((f) => (
++        {appointmentFilters.map((f) => (
+           <button
+             key={f.id}
+             onClick={() => setFilter(f.id)}
+@@ -88,91 +75,15 @@ export default function AppointmentsListWithSupabase({
+       ) : (
+         <div className="appointment-list">
+           {rows.map((a) => (
+-            <article key={a.id} className="appointment-row">
+-              <div className="appointment-date">
+-                <strong>{a.appointment_date.slice(-2)}</strong>
+-                <span>
+-                  {new Date(
+-                    a.appointment_date + "T12:00:00",
+-                  ).toLocaleDateString("es-PE", {
+-                    month: "short",
+-                    year: "numeric",
+-                  })}
+-                </span>
+-              </div>
+-              <div className="appointment-details">
+-                <div className="flex flex-wrap gap-3 items-center">
+-                  <h3>{a.specialty?.name ?? "Consulta médica"}</h3>
+-                  <Badge variant="outline" className={"status-" + a.status}>
+-                    {labels[a.status]}
+-                  </Badge>
+-                </div>
+-                <p>
+-                  {a.doctor?.name}
+-                  {currentUser.userType === "doctor"
+-                    ? " · " + a.patient_name
+-                    : ""}
+-                </p>
+-                <div className="appointment-meta">
+-                  <span>
+-                    <Clock3 size={14} />
+-                    {a.appointment_time.slice(0, 5)}
+-                  </span>
+-                  <span>
+-                    <MapPin size={14} />
+-                    {a.hospital?.name}
+-                  </span>
+-                </div>
+-                <p className="text-sm mt-2 text-slate-500">{a.reason}</p>
+-              </div>
+-              <div className="appointment-actions">
+-                {a.status === "pending" &&
+-                  currentUser.userType === "doctor" && (
+-                    <Button
+-                      size="sm"
+-                      disabled={update.isPending}
+-                      onClick={() => change(a.id, "confirmed")}
+-                    >
+-                      <Check size={15} />
+-                      Confirmar
+-                    </Button>
+-                  )}
+-                {a.status === "confirmed" &&
+-                  currentUser.userType === "doctor" && (
+-                    <Button
+-                      size="sm"
+-                      disabled={update.isPending}
+-                      onClick={() => change(a.id, "completed")}
+-                    >
+-                      Completar
+-                    </Button>
+-                  )}
+-                {["pending", "confirmed"].includes(a.status) && (
+-                  <Button
+-                    size="sm"
+-                    variant="outline"
+-                    disabled={update.isPending}
+-                    onClick={() => change(a.id, "cancelled")}
+-                  >
+-                    <X size={14} />
+-                    Cancelar
+-                  </Button>
+-                )}
+-                <Button
+-                  variant="ghost"
+-                  size="sm"
+-                  onClick={() => setPreview(preview === a.id ? null : a.id)}
+-                >
+-                  <FileText size={15} />
+-                  Comprobante
+-                </Button>
+-              </div>
+-              {preview === a.id && (
+-                <div className="w-full basis-full">
+-                  <AppointmentEmailTemplate appointment={a} />
+-                </div>
+-              )}
+-            </article>
++            <AppointmentCard
++              key={a.id}
++              appointment={a}
++              userType={currentUser.userType}
++              isUpdating={update.isPending}
++              isPreviewOpen={preview === a.id}
++              onStatusChange={change}
++              onTogglePreview={() => setPreview(preview === a.id ? null : a.id)}
++            />
+           ))}
+         </div>
+       )}
+diff --git a/src/components/PageHeading.tsx b/src/components/PageHeading.tsx
+new file mode 100644
+index 0000000..3967eaa
+--- /dev/null
++++ b/src/components/PageHeading.tsx
+@@ -0,0 +1,21 @@
++import type { ReactNode } from "react";
++
++interface PageHeadingProps {
++  eyebrow: ReactNode;
++  title: ReactNode;
++  description: ReactNode;
++}
++
++export default function PageHeading({
++  eyebrow,
++  title,
++  description,
++}: PageHeadingProps) {
++  return (
++    <div className="page-heading">
++      <span className="eyebrow">{eyebrow}</span>
++      <h1>{title}</h1>
++      <p>{description}</p>
++    </div>
++  );
++}
+diff --git a/src/components/PatientHistory.tsx b/src/components/PatientHistory.tsx
+index edd6a09..d452b52 100644
+--- a/src/components/PatientHistory.tsx
++++ b/src/components/PatientHistory.tsx
+@@ -3,14 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
+ import type { User } from "@/hooks/useAuth";
+ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+ import { Button } from "@/components/ui/button";
+-import { Badge } from "@/components/ui/badge";
+-
+-const statusLabels = {
+-  pending: "Pendiente",
+-  confirmed: "Confirmada",
+-  completed: "Completada",
+-  cancelled: "Cancelada",
+-};
++import AppointmentStatusBadge from "@/components/AppointmentStatusBadge";
+ 
+ export default function PatientHistory({ currentUser }: { currentUser: User }) {
+   const history = useQuery({
+@@ -69,11 +62,10 @@ export default function PatientHistory({ currentUser }: { currentUser: User }) {
+                     <h3 className="font-semibold">
+                       {appointment.specialty?.name ?? "Consulta médica"}
+                     </h3>
+-                    <Badge variant="secondary">
+-                      {appointment.status
+-                        ? statusLabels[appointment.status]
+-                        : "Sin estado"}
+-                    </Badge>
++                    <AppointmentStatusBadge
++                      status={appointment.status}
++                      variant="secondary"
++                    />
+                   </div>
+                   <p>
+                     {new Date(
+diff --git a/src/lib/appointment-presentation.ts b/src/lib/appointment-presentation.ts
+new file mode 100644
+index 0000000..bff4134
+--- /dev/null
++++ b/src/lib/appointment-presentation.ts
+@@ -0,0 +1,38 @@
++import type { useAppointments } from "@/hooks/useSupabaseData";
++
++export type AppointmentListItem = NonNullable<
++  ReturnType<typeof useAppointments>["data"]
++>[number];
++export type AppointmentStatus = AppointmentListItem["status"];
++
++export const appointmentStatusLabels: Record<AppointmentStatus, string> = {
++  pending: "Pendiente",
++  confirmed: "Confirmada",
++  completed: "Completada",
++  cancelled: "Cancelada",
++};
++
++export const appointmentFilters = [
++  { id: "active", name: "Activas" },
++  { id: "completed", name: "Completadas" },
++  { id: "cancelled", name: "Canceladas" },
++  { id: "all", name: "Todas" },
++] as const;
++
++export type AppointmentFilter = (typeof appointmentFilters)[number]["id"];
++
++export function isActiveAppointment(status: AppointmentStatus) {
++  return status === "pending" || status === "confirmed";
++}
++
++export function filterAppointments(
++  appointments: AppointmentListItem[],
++  filter: AppointmentFilter,
++) {
++  return appointments.filter((appointment) =>
++    filter === "all" ||
++    (filter === "active"
++      ? isActiveAppointment(appointment.status)
++      : appointment.status === filter),
++  );
++}
+diff --git a/src/pages/AdminDashboard.tsx b/src/pages/AdminDashboard.tsx
+index 50b05ee..1bdade5 100644
+--- a/src/pages/AdminDashboard.tsx
++++ b/src/pages/AdminDashboard.tsx
+@@ -1,3 +1,4 @@
++import PageHeading from "@/components/PageHeading";
+ import AdminRoleForm from "@/components/AdminRoleForm";
+ import { useQuery } from "@tanstack/react-query";
+ import { supabase } from "@/integrations/supabase/client";
+@@ -22,11 +23,11 @@ export default function AdminDashboard() {
+   });
+   return (
+     <div className="space-y-7">
+-      <div className="page-heading">
+-        <span className="eyebrow">VISIÓN GENERAL</span>
+-        <h1>Panel de administración</h1>
+-        <p>Las personas y la atención que hacen posible MediCitas.</p>
+-      </div>
++      <PageHeading
++        eyebrow="VISIÓN GENERAL"
++        title="Panel de administración"
++        description="Las personas y la atención que hacen posible MediCitas."
++      />
+       {query.isPending ? (
+         <p role="status">Cargando estadísticas...</p>
+       ) : query.isError ? (
+diff --git a/src/pages/Dashboard.tsx b/src/pages/Dashboard.tsx
+index f0b82ec..61b1ebc 100644
+--- a/src/pages/Dashboard.tsx
++++ b/src/pages/Dashboard.tsx
+@@ -1,3 +1,4 @@
++import PageHeading from "@/components/PageHeading";
+ import MedicalNotes from "@/components/MedicalNotes";
+ import { Link, Navigate } from "react-router-dom";
+ import {
+@@ -24,27 +25,22 @@ export default function Dashboard({
+   if (view === "book")
+     return (
+       <>
+-        <div className="page-heading">
+-          <span className="eyebrow">UN PASO HACIA TU BIENESTAR</span>
+-          <h1>Agenda tu próxima consulta</h1>
+-          <p>
+-            Elige el centro, especialista y horario que mejor se adapten a ti.
+-          </p>
+-        </div>
++        <PageHeading
++          eyebrow="UN PASO HACIA TU BIENESTAR"
++          title="Agenda tu próxima consulta"
++          description="Elige el centro, especialista y horario que mejor se adapten a ti."
++        />
+         <AppointmentFormWithSupabase currentUser={user} />
+       </>
+     );
+   if (view === "appointments")
+     return (
+       <>
+-        <div className="page-heading">
+-          <span className="eyebrow">TU ATENCIÓN, ORGANIZADA</span>
+-          <h1>Mis citas</h1>
+-          <p>
+-            Consulta el estado de tus reservas y administra tus próximas
+-            visitas.
+-          </p>
+-        </div>
++        <PageHeading
++          eyebrow="TU ATENCIÓN, ORGANIZADA"
++          title="Mis citas"
++          description="Consulta el estado de tus reservas y administra tus próximas visitas."
++        />
+         <AppointmentsListWithSupabase currentUser={user} />
+       </>
+     );
+@@ -56,22 +52,24 @@ export default function Dashboard({
+     appointments.data?.filter((a) => a.status === "completed").length ?? 0;
+   return (
+     <div className="space-y-7">
+-      <div className="page-heading">
+-        <span className="eyebrow">
+-          {user.userType === "doctor"
++      <PageHeading
++        eyebrow={
++          user.userType === "doctor"
+             ? "TU AGENDA DE HOY"
+-            : "TU ESPACIO DE BIENESTAR"}
+-        </span>
+-        <h1>
+-          Hola, {user.name.split(" ")[0]}{" "}
+-          <span className="greeting-dot">.</span>
+-        </h1>
+-        <p>
+-          {user.userType === "doctor"
++            : "TU ESPACIO DE BIENESTAR"
++        }
++        title={
++          <>
++            Hola, {user.name.split(" ")[0]}{" "}
++            <span className="greeting-dot">.</span>
++          </>
++        }
++        description={
++          user.userType === "doctor"
+             ? "Cada consulta es una oportunidad para cuidar."
+-            : "Qué bueno que te tomes un momento para cuidar de ti."}
+-        </p>
+-      </div>
++            : "Qué bueno que te tomes un momento para cuidar de ti."
++        }
++      />
+       <section className="welcome-banner">
+         <div>
+           <span className="eyebrow light">CUIDARTE ES LO PRIMERO</span>
+diff --git a/src/pages/PatientProfile.tsx b/src/pages/PatientProfile.tsx
+index 0e5bc13..6a96c5f 100644
+--- a/src/pages/PatientProfile.tsx
++++ b/src/pages/PatientProfile.tsx
+@@ -1,3 +1,4 @@
++import PageHeading from "@/components/PageHeading";
+ import { useState, type FormEvent } from "react";
+ import { useQuery, useQueryClient } from "@tanstack/react-query";
+ import { useAuth } from "@/hooks/useAuth";
+@@ -193,11 +194,11 @@ export default function PatientProfile() {
+   if (!user) return null;
+   return (
+     <div className="space-y-7">
+-      <div className="page-heading">
+-        <span className="eyebrow">CONOCERTE ES CUIDARTE MEJOR</span>
+-        <h1>Mi perfil e historial</h1>
+-        <p>Tus datos al día, tu atención en un solo lugar.</p>
+-      </div>
++      <PageHeading
++        eyebrow="CONOCERTE ES CUIDARTE MEJOR"
++        title="Mi perfil e historial"
++        description="Tus datos al día, tu atención en un solo lugar."
++      />
+       <div className="profile-grid">
+         <aside className="surface profile-summary">
+           <div className="profile-avatar">{user.name.slice(0, 1)}</div>

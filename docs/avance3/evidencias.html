@@ -1,0 +1,1720 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MediCitas · Evidencias del avance 3</title>
+<style>
+:root{font:16px/1.6 system-ui,sans-serif;color:#152f3a;background:#eef5f6}*{box-sizing:border-box}body{margin:0}header{padding:48px max(24px,5vw);background:#123c40;color:white}header p{max-width:800px;color:#c6e6e3}.tag{font-size:12px;letter-spacing:.12em;color:#87d7c7}h1{font-size:clamp(28px,4vw,46px);line-height:1.15;margin:14px 0}main{padding:28px max(20px,4vw);max-width:1800px;margin:auto}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:0 0 24px}.metric{background:white;padding:20px;border-radius:14px;border:1px solid #cddfe0}.metric strong{font-size:30px;display:block;color:#0b6d66}.metric span{font-size:14px}.notice{padding:20px;background:#fff;border-left:4px solid #149b87;border-radius:8px;margin:22px 0}details{border:1px solid #cddfe0;background:white;border-radius:10px;margin:14px 0;overflow:hidden}summary{padding:16px 20px;font-weight:650;cursor:pointer;overflow-wrap:anywhere}.comparison{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#d5e1e4}.comparison section{min-width:0;background:#101e2a}h3{margin:0;padding:12px 18px;background:#e5f3f0;font-size:14px}pre{margin:0;padding:16px 0;overflow:auto;max-height:680px;color:#e0eaf4;font-size:12px;line-height:1.7;tab-size:2}.line{display:block;min-height:20px;white-space:pre}.line i{display:inline-block;color:#8094a5;width:48px;text-align:right;padding-right:14px;user-select:none;font-style:normal}a{color:#087366}table{border-collapse:collapse;width:100%;background:white}td,th{text-align:left;padding:12px;border-bottom:1px solid #d5e1e4}footer{margin:32px 0;font-size:13px;color:#567}code{font-family:Consolas,monospace}@media(max-width:900px){.comparison,.metrics{grid-template-columns:1fr}pre{max-height:460px}}@media print{details{break-inside:avoid}.comparison{grid-template-columns:1fr}pre{max-height:none;white-space:pre-wrap}header{padding:20px}}
+</style>
+<header><div class="tag">HERRAMIENTAS DE DESARROLLO · AVANCE 3</div><h1>MediCitas: optimización del frontend</h1><p>Ángel Estefano Aguirre Diaz · 14 de noviembre de 2026<br>Comparación del código real de la versión 8f76545 y la rama feature/optimizacion-frontend-angel.</p></header>
+<main><div class="metrics"><div class="metric"><strong>181 → 92</strong><span>Líneas del componente del listado</span></div><div class="metric"><strong>71</strong><span>Comprobaciones de regresión aprobadas</span></div><div class="metric"><strong>main intacta</strong><span>Cambios en una rama independiente</span></div></div>
+<h2>Qué se mejoró</h2><table><tr><th>Antes</th><th>Después</th></tr><tr><td>Listado con consultas, filtros y tarjeta en un solo componente</td><td>AppointmentCard recibe los datos y callbacks; el listado conserva su lógica</td></tr><tr><td>Etiquetas de estado repetidas en listado e historial</td><td>Catálogo tipado y AppointmentStatusBadge compartidos</td></tr><tr><td>Estructura del encabezado repetida en cinco lugares</td><td>PageHeading compartido por tres páginas</td></tr><tr><td>Opciones de filtro y tipos mezclados en la vista</td><td>Módulo appointment-presentation con opciones y tipos reutilizables</td></tr></table>
+<div class="notice"><strong>Alcance de la evidencia.</strong> Se comparó el HTML renderizado y se probaron callbacks con datos ficticios y consultas simuladas. TypeScript, la compilación y el lint de los archivos del cambio pasaron. El lint general conserva cuatro errores y siete advertencias preexistentes. No se realizó una prueba manual completa en navegador ni una integración contra Supabase remoto. Las 89 líneas trasladadas del listado no equivalen a una reducción de todo el código ni a una mejora de velocidad medida.</div>
+<p><a href="README.md">Informe del aporte</a> · <a href="verificacion.txt">Salida real de verificación</a> · <a href="cambios.patch">Diferencias de código</a></p>
+<h2>Código antes y después</h2><p>Abre cada archivo para ver su contenido completo y numerado. Los componentes nuevos aparecen después de los archivos refactorizados.</p>
+<details><summary>src/components/AppointmentsListWithSupabase.tsx</summary><div class="comparison"><section><h3>Antes · 8f76545</h3><pre><code><span class="line"><i>1</i>import { useState } from &quot;react&quot;;</span>
+<span class="line"><i>2</i>import type { User } from &quot;@/hooks/useAuth&quot;;</span>
+<span class="line"><i>3</i>import { useAppointments, useUpdateAppointment } from &quot;@/hooks/useSupabaseData&quot;;</span>
+<span class="line"><i>4</i>import { Button } from &quot;@/components/ui/button&quot;;</span>
+<span class="line"><i>5</i>import { CalendarDays, MapPin, Clock3, Check, X, FileText } from &quot;lucide-react&quot;;</span>
+<span class="line"><i>6</i>import { Badge } from &quot;@/components/ui/badge&quot;;</span>
+<span class="line"><i>7</i>import AppointmentEmailTemplate from &quot;@/components/AppointmentEmailTemplate&quot;;</span>
+<span class="line"><i>8</i>const labels = {</span>
+<span class="line"><i>9</i>  pending: &quot;Pendiente&quot;,</span>
+<span class="line"><i>10</i>  confirmed: &quot;Confirmada&quot;,</span>
+<span class="line"><i>11</i>  completed: &quot;Completada&quot;,</span>
+<span class="line"><i>12</i>  cancelled: &quot;Cancelada&quot;,</span>
+<span class="line"><i>13</i>};</span>
+<span class="line"><i>14</i>export default function AppointmentsListWithSupabase({</span>
+<span class="line"><i>15</i>  currentUser,</span>
+<span class="line"><i>16</i>}: {</span>
+<span class="line"><i>17</i>  currentUser: User;</span>
+<span class="line"><i>18</i>}) {</span>
+<span class="line"><i>19</i>  const appointments = useAppointments();</span>
+<span class="line"><i>20</i>  const update = useUpdateAppointment();</span>
+<span class="line"><i>21</i>  const [filter, setFilter] = useState(&quot;active&quot;);</span>
+<span class="line"><i>22</i>  const [error, setError] = useState(&quot;&quot;);</span>
+<span class="line"><i>23</i>  const [preview, setPreview] = useState&lt;string | null&gt;(null);</span>
+<span class="line"><i>24</i>  async function change(</span>
+<span class="line"><i>25</i>    id: string,</span>
+<span class="line"><i>26</i>    status: &quot;confirmed&quot; | &quot;cancelled&quot; | &quot;completed&quot;,</span>
+<span class="line"><i>27</i>  ) {</span>
+<span class="line"><i>28</i>    setError(&quot;&quot;);</span>
+<span class="line"><i>29</i>    try {</span>
+<span class="line"><i>30</i>      await update.mutateAsync({ id, status });</span>
+<span class="line"><i>31</i>    } catch {</span>
+<span class="line"><i>32</i>      setError(</span>
+<span class="line"><i>33</i>        &quot;No se pudo cambiar el estado. Actualiza la lista y verifica los permisos de tu cuenta.&quot;,</span>
+<span class="line"><i>34</i>      );</span>
+<span class="line"><i>35</i>    }</span>
+<span class="line"><i>36</i>  }</span>
+<span class="line"><i>37</i>  if (appointments.isPending)</span>
+<span class="line"><i>38</i>    return (</span>
+<span class="line"><i>39</i>      &lt;p role=&quot;status&quot; className=&quot;empty-state&quot;&gt;</span>
+<span class="line"><i>40</i>        Cargando tus citas...</span>
+<span class="line"><i>41</i>      &lt;/p&gt;</span>
+<span class="line"><i>42</i>    );</span>
+<span class="line"><i>43</i>  if (appointments.isError)</span>
+<span class="line"><i>44</i>    return (</span>
+<span class="line"><i>45</i>      &lt;div role=&quot;alert&quot; className=&quot;notice error&quot;&gt;</span>
+<span class="line"><i>46</i>        No se pudieron cargar las citas.{&quot; &quot;}</span>
+<span class="line"><i>47</i>        &lt;Button variant=&quot;outline&quot; onClick={() =&gt; appointments.refetch()}&gt;</span>
+<span class="line"><i>48</i>          Reintentar</span>
+<span class="line"><i>49</i>        &lt;/Button&gt;</span>
+<span class="line"><i>50</i>      &lt;/div&gt;</span>
+<span class="line"><i>51</i>    );</span>
+<span class="line"><i>52</i>  const rows = appointments.data.filter(</span>
+<span class="line"><i>53</i>    (a) =&gt;</span>
+<span class="line"><i>54</i>      filter === &quot;all&quot; ||</span>
+<span class="line"><i>55</i>      (filter === &quot;active&quot;</span>
+<span class="line"><i>56</i>        ? [&quot;pending&quot;, &quot;confirmed&quot;].includes(a.status)</span>
+<span class="line"><i>57</i>        : a.status === filter),</span>
+<span class="line"><i>58</i>  );</span>
+<span class="line"><i>59</i>  return (</span>
+<span class="line"><i>60</i>    &lt;section&gt;</span>
+<span class="line"><i>61</i>      &lt;div className=&quot;appointment-filters&quot; aria-label=&quot;Filtrar citas&quot;&gt;</span>
+<span class="line"><i>62</i>        {[</span>
+<span class="line"><i>63</i>          { id: &quot;active&quot;, name: &quot;Activas&quot; },</span>
+<span class="line"><i>64</i>          { id: &quot;completed&quot;, name: &quot;Completadas&quot; },</span>
+<span class="line"><i>65</i>          { id: &quot;cancelled&quot;, name: &quot;Canceladas&quot; },</span>
+<span class="line"><i>66</i>          { id: &quot;all&quot;, name: &quot;Todas&quot; },</span>
+<span class="line"><i>67</i>        ].map((f) =&gt; (</span>
+<span class="line"><i>68</i>          &lt;button</span>
+<span class="line"><i>69</i>            key={f.id}</span>
+<span class="line"><i>70</i>            onClick={() =&gt; setFilter(f.id)}</span>
+<span class="line"><i>71</i>            className={filter === f.id ? &quot;selected&quot; : &quot;&quot;}</span>
+<span class="line"><i>72</i>          &gt;</span>
+<span class="line"><i>73</i>            {f.name}</span>
+<span class="line"><i>74</i>          &lt;/button&gt;</span>
+<span class="line"><i>75</i>        ))}</span>
+<span class="line"><i>76</i>      &lt;/div&gt;</span>
+<span class="line"><i>77</i>      {error &amp;&amp; (</span>
+<span class="line"><i>78</i>        &lt;p className=&quot;notice error&quot; role=&quot;alert&quot;&gt;</span>
+<span class="line"><i>79</i>          {error}</span>
+<span class="line"><i>80</i>        &lt;/p&gt;</span>
+<span class="line"><i>81</i>      )}</span>
+<span class="line"><i>82</i>      {!rows.length ? (</span>
+<span class="line"><i>83</i>        &lt;div className=&quot;empty-state&quot;&gt;</span>
+<span class="line"><i>84</i>          &lt;CalendarDays size={36} /&gt;</span>
+<span class="line"><i>85</i>          &lt;h3&gt;No hay citas en esta sección&lt;/h3&gt;</span>
+<span class="line"><i>86</i>          &lt;p&gt;Las consultas que registres aparecerán aquí.&lt;/p&gt;</span>
+<span class="line"><i>87</i>        &lt;/div&gt;</span>
+<span class="line"><i>88</i>      ) : (</span>
+<span class="line"><i>89</i>        &lt;div className=&quot;appointment-list&quot;&gt;</span>
+<span class="line"><i>90</i>          {rows.map((a) =&gt; (</span>
+<span class="line"><i>91</i>            &lt;article key={a.id} className=&quot;appointment-row&quot;&gt;</span>
+<span class="line"><i>92</i>              &lt;div className=&quot;appointment-date&quot;&gt;</span>
+<span class="line"><i>93</i>                &lt;strong&gt;{a.appointment_date.slice(-2)}&lt;/strong&gt;</span>
+<span class="line"><i>94</i>                &lt;span&gt;</span>
+<span class="line"><i>95</i>                  {new Date(</span>
+<span class="line"><i>96</i>                    a.appointment_date + &quot;T12:00:00&quot;,</span>
+<span class="line"><i>97</i>                  ).toLocaleDateString(&quot;es-PE&quot;, {</span>
+<span class="line"><i>98</i>                    month: &quot;short&quot;,</span>
+<span class="line"><i>99</i>                    year: &quot;numeric&quot;,</span>
+<span class="line"><i>100</i>                  })}</span>
+<span class="line"><i>101</i>                &lt;/span&gt;</span>
+<span class="line"><i>102</i>              &lt;/div&gt;</span>
+<span class="line"><i>103</i>              &lt;div className=&quot;appointment-details&quot;&gt;</span>
+<span class="line"><i>104</i>                &lt;div className=&quot;flex flex-wrap gap-3 items-center&quot;&gt;</span>
+<span class="line"><i>105</i>                  &lt;h3&gt;{a.specialty?.name ?? &quot;Consulta médica&quot;}&lt;/h3&gt;</span>
+<span class="line"><i>106</i>                  &lt;Badge variant=&quot;outline&quot; className={&quot;status-&quot; + a.status}&gt;</span>
+<span class="line"><i>107</i>                    {labels[a.status]}</span>
+<span class="line"><i>108</i>                  &lt;/Badge&gt;</span>
+<span class="line"><i>109</i>                &lt;/div&gt;</span>
+<span class="line"><i>110</i>                &lt;p&gt;</span>
+<span class="line"><i>111</i>                  {a.doctor?.name}</span>
+<span class="line"><i>112</i>                  {currentUser.userType === &quot;doctor&quot;</span>
+<span class="line"><i>113</i>                    ? &quot; · &quot; + a.patient_name</span>
+<span class="line"><i>114</i>                    : &quot;&quot;}</span>
+<span class="line"><i>115</i>                &lt;/p&gt;</span>
+<span class="line"><i>116</i>                &lt;div className=&quot;appointment-meta&quot;&gt;</span>
+<span class="line"><i>117</i>                  &lt;span&gt;</span>
+<span class="line"><i>118</i>                    &lt;Clock3 size={14} /&gt;</span>
+<span class="line"><i>119</i>                    {a.appointment_time.slice(0, 5)}</span>
+<span class="line"><i>120</i>                  &lt;/span&gt;</span>
+<span class="line"><i>121</i>                  &lt;span&gt;</span>
+<span class="line"><i>122</i>                    &lt;MapPin size={14} /&gt;</span>
+<span class="line"><i>123</i>                    {a.hospital?.name}</span>
+<span class="line"><i>124</i>                  &lt;/span&gt;</span>
+<span class="line"><i>125</i>                &lt;/div&gt;</span>
+<span class="line"><i>126</i>                &lt;p className=&quot;text-sm mt-2 text-slate-500&quot;&gt;{a.reason}&lt;/p&gt;</span>
+<span class="line"><i>127</i>              &lt;/div&gt;</span>
+<span class="line"><i>128</i>              &lt;div className=&quot;appointment-actions&quot;&gt;</span>
+<span class="line"><i>129</i>                {a.status === &quot;pending&quot; &amp;&amp;</span>
+<span class="line"><i>130</i>                  currentUser.userType === &quot;doctor&quot; &amp;&amp; (</span>
+<span class="line"><i>131</i>                    &lt;Button</span>
+<span class="line"><i>132</i>                      size=&quot;sm&quot;</span>
+<span class="line"><i>133</i>                      disabled={update.isPending}</span>
+<span class="line"><i>134</i>                      onClick={() =&gt; change(a.id, &quot;confirmed&quot;)}</span>
+<span class="line"><i>135</i>                    &gt;</span>
+<span class="line"><i>136</i>                      &lt;Check size={15} /&gt;</span>
+<span class="line"><i>137</i>                      Confirmar</span>
+<span class="line"><i>138</i>                    &lt;/Button&gt;</span>
+<span class="line"><i>139</i>                  )}</span>
+<span class="line"><i>140</i>                {a.status === &quot;confirmed&quot; &amp;&amp;</span>
+<span class="line"><i>141</i>                  currentUser.userType === &quot;doctor&quot; &amp;&amp; (</span>
+<span class="line"><i>142</i>                    &lt;Button</span>
+<span class="line"><i>143</i>                      size=&quot;sm&quot;</span>
+<span class="line"><i>144</i>                      disabled={update.isPending}</span>
+<span class="line"><i>145</i>                      onClick={() =&gt; change(a.id, &quot;completed&quot;)}</span>
+<span class="line"><i>146</i>                    &gt;</span>
+<span class="line"><i>147</i>                      Completar</span>
+<span class="line"><i>148</i>                    &lt;/Button&gt;</span>
+<span class="line"><i>149</i>                  )}</span>
+<span class="line"><i>150</i>                {[&quot;pending&quot;, &quot;confirmed&quot;].includes(a.status) &amp;&amp; (</span>
+<span class="line"><i>151</i>                  &lt;Button</span>
+<span class="line"><i>152</i>                    size=&quot;sm&quot;</span>
+<span class="line"><i>153</i>                    variant=&quot;outline&quot;</span>
+<span class="line"><i>154</i>                    disabled={update.isPending}</span>
+<span class="line"><i>155</i>                    onClick={() =&gt; change(a.id, &quot;cancelled&quot;)}</span>
+<span class="line"><i>156</i>                  &gt;</span>
+<span class="line"><i>157</i>                    &lt;X size={14} /&gt;</span>
+<span class="line"><i>158</i>                    Cancelar</span>
+<span class="line"><i>159</i>                  &lt;/Button&gt;</span>
+<span class="line"><i>160</i>                )}</span>
+<span class="line"><i>161</i>                &lt;Button</span>
+<span class="line"><i>162</i>                  variant=&quot;ghost&quot;</span>
+<span class="line"><i>163</i>                  size=&quot;sm&quot;</span>
+<span class="line"><i>164</i>                  onClick={() =&gt; setPreview(preview === a.id ? null : a.id)}</span>
+<span class="line"><i>165</i>                &gt;</span>
+<span class="line"><i>166</i>                  &lt;FileText size={15} /&gt;</span>
+<span class="line"><i>167</i>                  Comprobante</span>
+<span class="line"><i>168</i>                &lt;/Button&gt;</span>
+<span class="line"><i>169</i>              &lt;/div&gt;</span>
+<span class="line"><i>170</i>              {preview === a.id &amp;&amp; (</span>
+<span class="line"><i>171</i>                &lt;div className=&quot;w-full basis-full&quot;&gt;</span>
+<span class="line"><i>172</i>                  &lt;AppointmentEmailTemplate appointment={a} /&gt;</span>
+<span class="line"><i>173</i>                &lt;/div&gt;</span>
+<span class="line"><i>174</i>              )}</span>
+<span class="line"><i>175</i>            &lt;/article&gt;</span>
+<span class="line"><i>176</i>          ))}</span>
+<span class="line"><i>177</i>        &lt;/div&gt;</span>
+<span class="line"><i>178</i>      )}</span>
+<span class="line"><i>179</i>    &lt;/section&gt;</span>
+<span class="line"><i>180</i>  );</span>
+<span class="line"><i>181</i>}</span></code></pre></section><section><h3>Después · rama de Ángel</h3><pre><code><span class="line"><i>1</i>import { useState } from &quot;react&quot;;</span>
+<span class="line"><i>2</i>import type { User } from &quot;@/hooks/useAuth&quot;;</span>
+<span class="line"><i>3</i>import { useAppointments, useUpdateAppointment } from &quot;@/hooks/useSupabaseData&quot;;</span>
+<span class="line"><i>4</i>import { Button } from &quot;@/components/ui/button&quot;;</span>
+<span class="line"><i>5</i>import { CalendarDays } from &quot;lucide-react&quot;;</span>
+<span class="line"><i>6</i>import AppointmentCard from &quot;@/components/AppointmentCard&quot;;</span>
+<span class="line"><i>7</i>import {</span>
+<span class="line"><i>8</i>  appointmentFilters,</span>
+<span class="line"><i>9</i>  filterAppointments,</span>
+<span class="line"><i>10</i>  type AppointmentFilter,</span>
+<span class="line"><i>11</i>} from &quot;@/lib/appointment-presentation&quot;;</span>
+<span class="line"><i>12</i>export default function AppointmentsListWithSupabase({</span>
+<span class="line"><i>13</i>  currentUser,</span>
+<span class="line"><i>14</i>}: {</span>
+<span class="line"><i>15</i>  currentUser: User;</span>
+<span class="line"><i>16</i>}) {</span>
+<span class="line"><i>17</i>  const appointments = useAppointments();</span>
+<span class="line"><i>18</i>  const update = useUpdateAppointment();</span>
+<span class="line"><i>19</i>  const [filter, setFilter] = useState&lt;AppointmentFilter&gt;(&quot;active&quot;);</span>
+<span class="line"><i>20</i>  const [error, setError] = useState(&quot;&quot;);</span>
+<span class="line"><i>21</i>  const [preview, setPreview] = useState&lt;string | null&gt;(null);</span>
+<span class="line"><i>22</i>  async function change(</span>
+<span class="line"><i>23</i>    id: string,</span>
+<span class="line"><i>24</i>    status: &quot;confirmed&quot; | &quot;cancelled&quot; | &quot;completed&quot;,</span>
+<span class="line"><i>25</i>  ) {</span>
+<span class="line"><i>26</i>    setError(&quot;&quot;);</span>
+<span class="line"><i>27</i>    try {</span>
+<span class="line"><i>28</i>      await update.mutateAsync({ id, status });</span>
+<span class="line"><i>29</i>    } catch {</span>
+<span class="line"><i>30</i>      setError(</span>
+<span class="line"><i>31</i>        &quot;No se pudo cambiar el estado. Actualiza la lista y verifica los permisos de tu cuenta.&quot;,</span>
+<span class="line"><i>32</i>      );</span>
+<span class="line"><i>33</i>    }</span>
+<span class="line"><i>34</i>  }</span>
+<span class="line"><i>35</i>  if (appointments.isPending)</span>
+<span class="line"><i>36</i>    return (</span>
+<span class="line"><i>37</i>      &lt;p role=&quot;status&quot; className=&quot;empty-state&quot;&gt;</span>
+<span class="line"><i>38</i>        Cargando tus citas...</span>
+<span class="line"><i>39</i>      &lt;/p&gt;</span>
+<span class="line"><i>40</i>    );</span>
+<span class="line"><i>41</i>  if (appointments.isError)</span>
+<span class="line"><i>42</i>    return (</span>
+<span class="line"><i>43</i>      &lt;div role=&quot;alert&quot; className=&quot;notice error&quot;&gt;</span>
+<span class="line"><i>44</i>        No se pudieron cargar las citas.{&quot; &quot;}</span>
+<span class="line"><i>45</i>        &lt;Button variant=&quot;outline&quot; onClick={() =&gt; appointments.refetch()}&gt;</span>
+<span class="line"><i>46</i>          Reintentar</span>
+<span class="line"><i>47</i>        &lt;/Button&gt;</span>
+<span class="line"><i>48</i>      &lt;/div&gt;</span>
+<span class="line"><i>49</i>    );</span>
+<span class="line"><i>50</i>  const rows = filterAppointments(appointments.data, filter);</span>
+<span class="line"><i>51</i>  return (</span>
+<span class="line"><i>52</i>    &lt;section&gt;</span>
+<span class="line"><i>53</i>      &lt;div className=&quot;appointment-filters&quot; aria-label=&quot;Filtrar citas&quot;&gt;</span>
+<span class="line"><i>54</i>        {appointmentFilters.map((f) =&gt; (</span>
+<span class="line"><i>55</i>          &lt;button</span>
+<span class="line"><i>56</i>            key={f.id}</span>
+<span class="line"><i>57</i>            onClick={() =&gt; setFilter(f.id)}</span>
+<span class="line"><i>58</i>            className={filter === f.id ? &quot;selected&quot; : &quot;&quot;}</span>
+<span class="line"><i>59</i>          &gt;</span>
+<span class="line"><i>60</i>            {f.name}</span>
+<span class="line"><i>61</i>          &lt;/button&gt;</span>
+<span class="line"><i>62</i>        ))}</span>
+<span class="line"><i>63</i>      &lt;/div&gt;</span>
+<span class="line"><i>64</i>      {error &amp;&amp; (</span>
+<span class="line"><i>65</i>        &lt;p className=&quot;notice error&quot; role=&quot;alert&quot;&gt;</span>
+<span class="line"><i>66</i>          {error}</span>
+<span class="line"><i>67</i>        &lt;/p&gt;</span>
+<span class="line"><i>68</i>      )}</span>
+<span class="line"><i>69</i>      {!rows.length ? (</span>
+<span class="line"><i>70</i>        &lt;div className=&quot;empty-state&quot;&gt;</span>
+<span class="line"><i>71</i>          &lt;CalendarDays size={36} /&gt;</span>
+<span class="line"><i>72</i>          &lt;h3&gt;No hay citas en esta sección&lt;/h3&gt;</span>
+<span class="line"><i>73</i>          &lt;p&gt;Las consultas que registres aparecerán aquí.&lt;/p&gt;</span>
+<span class="line"><i>74</i>        &lt;/div&gt;</span>
+<span class="line"><i>75</i>      ) : (</span>
+<span class="line"><i>76</i>        &lt;div className=&quot;appointment-list&quot;&gt;</span>
+<span class="line"><i>77</i>          {rows.map((a) =&gt; (</span>
+<span class="line"><i>78</i>            &lt;AppointmentCard</span>
+<span class="line"><i>79</i>              key={a.id}</span>
+<span class="line"><i>80</i>              appointment={a}</span>
+<span class="line"><i>81</i>              userType={currentUser.userType}</span>
+<span class="line"><i>82</i>              isUpdating={update.isPending}</span>
+<span class="line"><i>83</i>              isPreviewOpen={preview === a.id}</span>
+<span class="line"><i>84</i>              onStatusChange={change}</span>
+<span class="line"><i>85</i>              onTogglePreview={() =&gt; setPreview(preview === a.id ? null : a.id)}</span>
+<span class="line"><i>86</i>            /&gt;</span>
+<span class="line"><i>87</i>          ))}</span>
+<span class="line"><i>88</i>        &lt;/div&gt;</span>
+<span class="line"><i>89</i>      )}</span>
+<span class="line"><i>90</i>    &lt;/section&gt;</span>
+<span class="line"><i>91</i>  );</span>
+<span class="line"><i>92</i>}</span></code></pre></section></div></details><details><summary>src/components/PatientHistory.tsx</summary><div class="comparison"><section><h3>Antes · 8f76545</h3><pre><code><span class="line"><i>1</i>import { useQuery } from &quot;@tanstack/react-query&quot;;</span>
+<span class="line"><i>2</i>import { supabase } from &quot;@/integrations/supabase/client&quot;;</span>
+<span class="line"><i>3</i>import type { User } from &quot;@/hooks/useAuth&quot;;</span>
+<span class="line"><i>4</i>import { Card, CardContent, CardHeader, CardTitle } from &quot;@/components/ui/card&quot;;</span>
+<span class="line"><i>5</i>import { Button } from &quot;@/components/ui/button&quot;;</span>
+<span class="line"><i>6</i>import { Badge } from &quot;@/components/ui/badge&quot;;</span>
+<span class="line"><i>7</i></span>
+<span class="line"><i>8</i>const statusLabels = {</span>
+<span class="line"><i>9</i>  pending: &quot;Pendiente&quot;,</span>
+<span class="line"><i>10</i>  confirmed: &quot;Confirmada&quot;,</span>
+<span class="line"><i>11</i>  completed: &quot;Completada&quot;,</span>
+<span class="line"><i>12</i>  cancelled: &quot;Cancelada&quot;,</span>
+<span class="line"><i>13</i>};</span>
+<span class="line"><i>14</i></span>
+<span class="line"><i>15</i>export default function PatientHistory({ currentUser }: { currentUser: User }) {</span>
+<span class="line"><i>16</i>  const history = useQuery({</span>
+<span class="line"><i>17</i>    queryKey: [&quot;patient-history&quot;, currentUser.id],</span>
+<span class="line"><i>18</i>    enabled: currentUser.userType === &quot;patient&quot;,</span>
+<span class="line"><i>19</i>    queryFn: async () =&gt; {</span>
+<span class="line"><i>20</i>      const { data, error } = await supabase</span>
+<span class="line"><i>21</i>        .from(&quot;appointments&quot;)</span>
+<span class="line"><i>22</i>        .select(</span>
+<span class="line"><i>23</i>          &quot;id, patient_id, appointment_date, appointment_time, status, doctor:doctors(name), specialty:specialties(name), hospital:hospitals(name)&quot;,</span>
+<span class="line"><i>24</i>        )</span>
+<span class="line"><i>25</i>        .eq(&quot;patient_id&quot;, currentUser.id)</span>
+<span class="line"><i>26</i>        .order(&quot;appointment_date&quot;, { ascending: false })</span>
+<span class="line"><i>27</i>        .order(&quot;appointment_time&quot;, { ascending: false });</span>
+<span class="line"><i>28</i>      if (error) throw error;</span>
+<span class="line"><i>29</i>      const now = new Date();</span>
+<span class="line"><i>30</i>      return data.filter(</span>
+<span class="line"><i>31</i>        (appointment) =&gt;</span>
+<span class="line"><i>32</i>          new Date(</span>
+<span class="line"><i>33</i>            `${appointment.appointment_date}T${appointment.appointment_time}-05:00`,</span>
+<span class="line"><i>34</i>          ) &lt; now,</span>
+<span class="line"><i>35</i>      );</span>
+<span class="line"><i>36</i>    },</span>
+<span class="line"><i>37</i>  });</span>
+<span class="line"><i>38</i></span>
+<span class="line"><i>39</i>  return (</span>
+<span class="line"><i>40</i>    &lt;div className=&quot;space-y-6&quot;&gt;</span>
+<span class="line"><i>41</i>      &lt;Card&gt;</span>
+<span class="line"><i>42</i>        &lt;CardHeader&gt;</span>
+<span class="line"><i>43</i>          &lt;CardTitle&gt;Historial de citas anteriores&lt;/CardTitle&gt;</span>
+<span class="line"><i>44</i>        &lt;/CardHeader&gt;</span>
+<span class="line"><i>45</i>        &lt;CardContent&gt;</span>
+<span class="line"><i>46</i>          {currentUser.userType !== &quot;patient&quot; ? (</span>
+<span class="line"><i>47</i>            &lt;p&gt;Acceso reservado al paciente titular.&lt;/p&gt;</span>
+<span class="line"><i>48</i>          ) : history.isPending ? (</span>
+<span class="line"><i>49</i>            &lt;p role=&quot;status&quot;&gt;Cargando historial...&lt;/p&gt;</span>
+<span class="line"><i>50</i>          ) : history.isError ? (</span>
+<span class="line"><i>51</i>            &lt;div role=&quot;alert&quot;&gt;</span>
+<span class="line"><i>52</i>              &lt;p&gt;No se pudo cargar el historial.&lt;/p&gt;</span>
+<span class="line"><i>53</i>              &lt;Button variant=&quot;outline&quot; onClick={() =&gt; history.refetch()}&gt;</span>
+<span class="line"><i>54</i>                Reintentar</span>
+<span class="line"><i>55</i>              &lt;/Button&gt;</span>
+<span class="line"><i>56</i>            &lt;/div&gt;</span>
+<span class="line"><i>57</i>          ) : !history.data?.length ? (</span>
+<span class="line"><i>58</i>            &lt;p className=&quot;text-muted-foreground&quot;&gt;</span>
+<span class="line"><i>59</i>              Aún no tienes citas anteriores.</span>
+<span class="line"><i>60</i>            &lt;/p&gt;</span>
+<span class="line"><i>61</i>          ) : (</span>
+<span class="line"><i>62</i>            &lt;ul className=&quot;space-y-4&quot;&gt;</span>
+<span class="line"><i>63</i>              {history.data.map((appointment) =&gt; (</span>
+<span class="line"><i>64</i>                &lt;li</span>
+<span class="line"><i>65</i>                  key={appointment.id}</span>
+<span class="line"><i>66</i>                  className=&quot;rounded-lg border p-4 space-y-2&quot;</span>
+<span class="line"><i>67</i>                &gt;</span>
+<span class="line"><i>68</i>                  &lt;div className=&quot;flex flex-wrap justify-between gap-2&quot;&gt;</span>
+<span class="line"><i>69</i>                    &lt;h3 className=&quot;font-semibold&quot;&gt;</span>
+<span class="line"><i>70</i>                      {appointment.specialty?.name ?? &quot;Consulta médica&quot;}</span>
+<span class="line"><i>71</i>                    &lt;/h3&gt;</span>
+<span class="line"><i>72</i>                    &lt;Badge variant=&quot;secondary&quot;&gt;</span>
+<span class="line"><i>73</i>                      {appointment.status</span>
+<span class="line"><i>74</i>                        ? statusLabels[appointment.status]</span>
+<span class="line"><i>75</i>                        : &quot;Sin estado&quot;}</span>
+<span class="line"><i>76</i>                    &lt;/Badge&gt;</span>
+<span class="line"><i>77</i>                  &lt;/div&gt;</span>
+<span class="line"><i>78</i>                  &lt;p&gt;</span>
+<span class="line"><i>79</i>                    {new Date(</span>
+<span class="line"><i>80</i>                      `${appointment.appointment_date}T${appointment.appointment_time}-05:00`,</span>
+<span class="line"><i>81</i>                    ).toLocaleString(&quot;es-PE&quot;, {</span>
+<span class="line"><i>82</i>                      dateStyle: &quot;long&quot;,</span>
+<span class="line"><i>83</i>                      timeStyle: &quot;short&quot;,</span>
+<span class="line"><i>84</i>                      timeZone: &quot;America/Lima&quot;,</span>
+<span class="line"><i>85</i>                    })}</span>
+<span class="line"><i>86</i>                  &lt;/p&gt;</span>
+<span class="line"><i>87</i>                  &lt;p className=&quot;text-muted-foreground&quot;&gt;</span>
+<span class="line"><i>88</i>                    {appointment.doctor?.name ?? &quot;Médico no disponible&quot;} ·{&quot; &quot;}</span>
+<span class="line"><i>89</i>                    {appointment.hospital?.name ?? &quot;Centro no disponible&quot;}</span>
+<span class="line"><i>90</i>                  &lt;/p&gt;</span>
+<span class="line"><i>91</i>                &lt;/li&gt;</span>
+<span class="line"><i>92</i>              ))}</span>
+<span class="line"><i>93</i>            &lt;/ul&gt;</span>
+<span class="line"><i>94</i>          )}</span>
+<span class="line"><i>95</i>        &lt;/CardContent&gt;</span>
+<span class="line"><i>96</i>      &lt;/Card&gt;</span>
+<span class="line"><i>97</i>      &lt;Card&gt;</span>
+<span class="line"><i>98</i>        &lt;CardHeader&gt;</span>
+<span class="line"><i>99</i>          &lt;CardTitle&gt;Notas médicas · demostración&lt;/CardTitle&gt;</span>
+<span class="line"><i>100</i>        &lt;/CardHeader&gt;</span>
+<span class="line"><i>101</i>        &lt;CardContent className=&quot;space-y-3&quot;&gt;</span>
+<span class="line"><i>102</i>          &lt;p className=&quot;text-sm text-muted-foreground&quot;&gt;</span>
+<span class="line"><i>103</i>            Estructura inicial con datos ficticios. No ingresar información</span>
+<span class="line"><i>104</i>            clínica real.</span>
+<span class="line"><i>105</i>          &lt;/p&gt;</span>
+<span class="line"><i>106</i>          &lt;p&gt;</span>
+<span class="line"><i>107</i>            Acceso restringido al personal médico asignado. El servidor verifica</span>
+<span class="line"><i>108</i>            el rol y la relación con el paciente.</span>
+<span class="line"><i>109</i>          &lt;/p&gt;</span>
+<span class="line"><i>110</i>        &lt;/CardContent&gt;</span>
+<span class="line"><i>111</i>      &lt;/Card&gt;</span>
+<span class="line"><i>112</i>    &lt;/div&gt;</span>
+<span class="line"><i>113</i>  );</span>
+<span class="line"><i>114</i>}</span></code></pre></section><section><h3>Después · rama de Ángel</h3><pre><code><span class="line"><i>1</i>import { useQuery } from &quot;@tanstack/react-query&quot;;</span>
+<span class="line"><i>2</i>import { supabase } from &quot;@/integrations/supabase/client&quot;;</span>
+<span class="line"><i>3</i>import type { User } from &quot;@/hooks/useAuth&quot;;</span>
+<span class="line"><i>4</i>import { Card, CardContent, CardHeader, CardTitle } from &quot;@/components/ui/card&quot;;</span>
+<span class="line"><i>5</i>import { Button } from &quot;@/components/ui/button&quot;;</span>
+<span class="line"><i>6</i>import AppointmentStatusBadge from &quot;@/components/AppointmentStatusBadge&quot;;</span>
+<span class="line"><i>7</i></span>
+<span class="line"><i>8</i>export default function PatientHistory({ currentUser }: { currentUser: User }) {</span>
+<span class="line"><i>9</i>  const history = useQuery({</span>
+<span class="line"><i>10</i>    queryKey: [&quot;patient-history&quot;, currentUser.id],</span>
+<span class="line"><i>11</i>    enabled: currentUser.userType === &quot;patient&quot;,</span>
+<span class="line"><i>12</i>    queryFn: async () =&gt; {</span>
+<span class="line"><i>13</i>      const { data, error } = await supabase</span>
+<span class="line"><i>14</i>        .from(&quot;appointments&quot;)</span>
+<span class="line"><i>15</i>        .select(</span>
+<span class="line"><i>16</i>          &quot;id, patient_id, appointment_date, appointment_time, status, doctor:doctors(name), specialty:specialties(name), hospital:hospitals(name)&quot;,</span>
+<span class="line"><i>17</i>        )</span>
+<span class="line"><i>18</i>        .eq(&quot;patient_id&quot;, currentUser.id)</span>
+<span class="line"><i>19</i>        .order(&quot;appointment_date&quot;, { ascending: false })</span>
+<span class="line"><i>20</i>        .order(&quot;appointment_time&quot;, { ascending: false });</span>
+<span class="line"><i>21</i>      if (error) throw error;</span>
+<span class="line"><i>22</i>      const now = new Date();</span>
+<span class="line"><i>23</i>      return data.filter(</span>
+<span class="line"><i>24</i>        (appointment) =&gt;</span>
+<span class="line"><i>25</i>          new Date(</span>
+<span class="line"><i>26</i>            `${appointment.appointment_date}T${appointment.appointment_time}-05:00`,</span>
+<span class="line"><i>27</i>          ) &lt; now,</span>
+<span class="line"><i>28</i>      );</span>
+<span class="line"><i>29</i>    },</span>
+<span class="line"><i>30</i>  });</span>
+<span class="line"><i>31</i></span>
+<span class="line"><i>32</i>  return (</span>
+<span class="line"><i>33</i>    &lt;div className=&quot;space-y-6&quot;&gt;</span>
+<span class="line"><i>34</i>      &lt;Card&gt;</span>
+<span class="line"><i>35</i>        &lt;CardHeader&gt;</span>
+<span class="line"><i>36</i>          &lt;CardTitle&gt;Historial de citas anteriores&lt;/CardTitle&gt;</span>
+<span class="line"><i>37</i>        &lt;/CardHeader&gt;</span>
+<span class="line"><i>38</i>        &lt;CardContent&gt;</span>
+<span class="line"><i>39</i>          {currentUser.userType !== &quot;patient&quot; ? (</span>
+<span class="line"><i>40</i>            &lt;p&gt;Acceso reservado al paciente titular.&lt;/p&gt;</span>
+<span class="line"><i>41</i>          ) : history.isPending ? (</span>
+<span class="line"><i>42</i>            &lt;p role=&quot;status&quot;&gt;Cargando historial...&lt;/p&gt;</span>
+<span class="line"><i>43</i>          ) : history.isError ? (</span>
+<span class="line"><i>44</i>            &lt;div role=&quot;alert&quot;&gt;</span>
+<span class="line"><i>45</i>              &lt;p&gt;No se pudo cargar el historial.&lt;/p&gt;</span>
+<span class="line"><i>46</i>              &lt;Button variant=&quot;outline&quot; onClick={() =&gt; history.refetch()}&gt;</span>
+<span class="line"><i>47</i>                Reintentar</span>
+<span class="line"><i>48</i>              &lt;/Button&gt;</span>
+<span class="line"><i>49</i>            &lt;/div&gt;</span>
+<span class="line"><i>50</i>          ) : !history.data?.length ? (</span>
+<span class="line"><i>51</i>            &lt;p className=&quot;text-muted-foreground&quot;&gt;</span>
+<span class="line"><i>52</i>              Aún no tienes citas anteriores.</span>
+<span class="line"><i>53</i>            &lt;/p&gt;</span>
+<span class="line"><i>54</i>          ) : (</span>
+<span class="line"><i>55</i>            &lt;ul className=&quot;space-y-4&quot;&gt;</span>
+<span class="line"><i>56</i>              {history.data.map((appointment) =&gt; (</span>
+<span class="line"><i>57</i>                &lt;li</span>
+<span class="line"><i>58</i>                  key={appointment.id}</span>
+<span class="line"><i>59</i>                  className=&quot;rounded-lg border p-4 space-y-2&quot;</span>
+<span class="line"><i>60</i>                &gt;</span>
+<span class="line"><i>61</i>                  &lt;div className=&quot;flex flex-wrap justify-between gap-2&quot;&gt;</span>
+<span class="line"><i>62</i>                    &lt;h3 className=&quot;font-semibold&quot;&gt;</span>
+<span class="line"><i>63</i>                      {appointment.specialty?.name ?? &quot;Consulta médica&quot;}</span>
+<span class="line"><i>64</i>                    &lt;/h3&gt;</span>
+<span class="line"><i>65</i>                    &lt;AppointmentStatusBadge</span>
+<span class="line"><i>66</i>                      status={appointment.status}</span>
+<span class="line"><i>67</i>                      variant=&quot;secondary&quot;</span>
+<span class="line"><i>68</i>                    /&gt;</span>
+<span class="line"><i>69</i>                  &lt;/div&gt;</span>
+<span class="line"><i>70</i>                  &lt;p&gt;</span>
+<span class="line"><i>71</i>                    {new Date(</span>
+<span class="line"><i>72</i>                      `${appointment.appointment_date}T${appointment.appointment_time}-05:00`,</span>
+<span class="line"><i>73</i>                    ).toLocaleString(&quot;es-PE&quot;, {</span>
+<span class="line"><i>74</i>                      dateStyle: &quot;long&quot;,</span>
+<span class="line"><i>75</i>                      timeStyle: &quot;short&quot;,</span>
+<span class="line"><i>76</i>                      timeZone: &quot;America/Lima&quot;,</span>
+<span class="line"><i>77</i>                    })}</span>
+<span class="line"><i>78</i>                  &lt;/p&gt;</span>
+<span class="line"><i>79</i>                  &lt;p className=&quot;text-muted-foreground&quot;&gt;</span>
+<span class="line"><i>80</i>                    {appointment.doctor?.name ?? &quot;Médico no disponible&quot;} ·{&quot; &quot;}</span>
+<span class="line"><i>81</i>                    {appointment.hospital?.name ?? &quot;Centro no disponible&quot;}</span>
+<span class="line"><i>82</i>                  &lt;/p&gt;</span>
+<span class="line"><i>83</i>                &lt;/li&gt;</span>
+<span class="line"><i>84</i>              ))}</span>
+<span class="line"><i>85</i>            &lt;/ul&gt;</span>
+<span class="line"><i>86</i>          )}</span>
+<span class="line"><i>87</i>        &lt;/CardContent&gt;</span>
+<span class="line"><i>88</i>      &lt;/Card&gt;</span>
+<span class="line"><i>89</i>      &lt;Card&gt;</span>
+<span class="line"><i>90</i>        &lt;CardHeader&gt;</span>
+<span class="line"><i>91</i>          &lt;CardTitle&gt;Notas médicas · demostración&lt;/CardTitle&gt;</span>
+<span class="line"><i>92</i>        &lt;/CardHeader&gt;</span>
+<span class="line"><i>93</i>        &lt;CardContent className=&quot;space-y-3&quot;&gt;</span>
+<span class="line"><i>94</i>          &lt;p className=&quot;text-sm text-muted-foreground&quot;&gt;</span>
+<span class="line"><i>95</i>            Estructura inicial con datos ficticios. No ingresar información</span>
+<span class="line"><i>96</i>            clínica real.</span>
+<span class="line"><i>97</i>          &lt;/p&gt;</span>
+<span class="line"><i>98</i>          &lt;p&gt;</span>
+<span class="line"><i>99</i>            Acceso restringido al personal médico asignado. El servidor verifica</span>
+<span class="line"><i>100</i>            el rol y la relación con el paciente.</span>
+<span class="line"><i>101</i>          &lt;/p&gt;</span>
+<span class="line"><i>102</i>        &lt;/CardContent&gt;</span>
+<span class="line"><i>103</i>      &lt;/Card&gt;</span>
+<span class="line"><i>104</i>    &lt;/div&gt;</span>
+<span class="line"><i>105</i>  );</span>
+<span class="line"><i>106</i>}</span></code></pre></section></div></details><details><summary>src/pages/Dashboard.tsx</summary><div class="comparison"><section><h3>Antes · 8f76545</h3><pre><code><span class="line"><i>1</i>import MedicalNotes from &quot;@/components/MedicalNotes&quot;;</span>
+<span class="line"><i>2</i>import { Link, Navigate } from &quot;react-router-dom&quot;;</span>
+<span class="line"><i>3</i>import {</span>
+<span class="line"><i>4</i>  CalendarDays,</span>
+<span class="line"><i>5</i>  ArrowUpRight,</span>
+<span class="line"><i>6</i>  Stethoscope,</span>
+<span class="line"><i>7</i>  HeartPulse,</span>
+<span class="line"><i>8</i>  Clock3,</span>
+<span class="line"><i>9</i>  Plus,</span>
+<span class="line"><i>10</i>} from &quot;lucide-react&quot;;</span>
+<span class="line"><i>11</i>import { useAuth } from &quot;@/hooks/useAuth&quot;;</span>
+<span class="line"><i>12</i>import { useAppointments } from &quot;@/hooks/useSupabaseData&quot;;</span>
+<span class="line"><i>13</i>import AppointmentFormWithSupabase from &quot;@/components/AppointmentFormWithSupabase&quot;;</span>
+<span class="line"><i>14</i>import AppointmentsListWithSupabase from &quot;@/components/AppointmentsListWithSupabase&quot;;</span>
+<span class="line"><i>15</i>export default function Dashboard({</span>
+<span class="line"><i>16</i>  view,</span>
+<span class="line"><i>17</i>}: {</span>
+<span class="line"><i>18</i>  view?: &quot;book&quot; | &quot;appointments&quot;;</span>
+<span class="line"><i>19</i>}) {</span>
+<span class="line"><i>20</i>  const { user } = useAuth();</span>
+<span class="line"><i>21</i>  const appointments = useAppointments();</span>
+<span class="line"><i>22</i>  if (!user) return null;</span>
+<span class="line"><i>23</i>  if (user.userType === &quot;admin&quot;) return &lt;Navigate to=&quot;/admin&quot; replace /&gt;;</span>
+<span class="line"><i>24</i>  if (view === &quot;book&quot;)</span>
+<span class="line"><i>25</i>    return (</span>
+<span class="line"><i>26</i>      &lt;&gt;</span>
+<span class="line"><i>27</i>        &lt;div className=&quot;page-heading&quot;&gt;</span>
+<span class="line"><i>28</i>          &lt;span className=&quot;eyebrow&quot;&gt;UN PASO HACIA TU BIENESTAR&lt;/span&gt;</span>
+<span class="line"><i>29</i>          &lt;h1&gt;Agenda tu próxima consulta&lt;/h1&gt;</span>
+<span class="line"><i>30</i>          &lt;p&gt;</span>
+<span class="line"><i>31</i>            Elige el centro, especialista y horario que mejor se adapten a ti.</span>
+<span class="line"><i>32</i>          &lt;/p&gt;</span>
+<span class="line"><i>33</i>        &lt;/div&gt;</span>
+<span class="line"><i>34</i>        &lt;AppointmentFormWithSupabase currentUser={user} /&gt;</span>
+<span class="line"><i>35</i>      &lt;/&gt;</span>
+<span class="line"><i>36</i>    );</span>
+<span class="line"><i>37</i>  if (view === &quot;appointments&quot;)</span>
+<span class="line"><i>38</i>    return (</span>
+<span class="line"><i>39</i>      &lt;&gt;</span>
+<span class="line"><i>40</i>        &lt;div className=&quot;page-heading&quot;&gt;</span>
+<span class="line"><i>41</i>          &lt;span className=&quot;eyebrow&quot;&gt;TU ATENCIÓN, ORGANIZADA&lt;/span&gt;</span>
+<span class="line"><i>42</i>          &lt;h1&gt;Mis citas&lt;/h1&gt;</span>
+<span class="line"><i>43</i>          &lt;p&gt;</span>
+<span class="line"><i>44</i>            Consulta el estado de tus reservas y administra tus próximas</span>
+<span class="line"><i>45</i>            visitas.</span>
+<span class="line"><i>46</i>          &lt;/p&gt;</span>
+<span class="line"><i>47</i>        &lt;/div&gt;</span>
+<span class="line"><i>48</i>        &lt;AppointmentsListWithSupabase currentUser={user} /&gt;</span>
+<span class="line"><i>49</i>      &lt;/&gt;</span>
+<span class="line"><i>50</i>    );</span>
+<span class="line"><i>51</i>  const active =</span>
+<span class="line"><i>52</i>    appointments.data?.filter((a) =&gt;</span>
+<span class="line"><i>53</i>      [&quot;pending&quot;, &quot;confirmed&quot;].includes(a.status),</span>
+<span class="line"><i>54</i>    ) ?? [];</span>
+<span class="line"><i>55</i>  const completed =</span>
+<span class="line"><i>56</i>    appointments.data?.filter((a) =&gt; a.status === &quot;completed&quot;).length ?? 0;</span>
+<span class="line"><i>57</i>  return (</span>
+<span class="line"><i>58</i>    &lt;div className=&quot;space-y-7&quot;&gt;</span>
+<span class="line"><i>59</i>      &lt;div className=&quot;page-heading&quot;&gt;</span>
+<span class="line"><i>60</i>        &lt;span className=&quot;eyebrow&quot;&gt;</span>
+<span class="line"><i>61</i>          {user.userType === &quot;doctor&quot;</span>
+<span class="line"><i>62</i>            ? &quot;TU AGENDA DE HOY&quot;</span>
+<span class="line"><i>63</i>            : &quot;TU ESPACIO DE BIENESTAR&quot;}</span>
+<span class="line"><i>64</i>        &lt;/span&gt;</span>
+<span class="line"><i>65</i>        &lt;h1&gt;</span>
+<span class="line"><i>66</i>          Hola, {user.name.split(&quot; &quot;)[0]}{&quot; &quot;}</span>
+<span class="line"><i>67</i>          &lt;span className=&quot;greeting-dot&quot;&gt;.&lt;/span&gt;</span>
+<span class="line"><i>68</i>        &lt;/h1&gt;</span>
+<span class="line"><i>69</i>        &lt;p&gt;</span>
+<span class="line"><i>70</i>          {user.userType === &quot;doctor&quot;</span>
+<span class="line"><i>71</i>            ? &quot;Cada consulta es una oportunidad para cuidar.&quot;</span>
+<span class="line"><i>72</i>            : &quot;Qué bueno que te tomes un momento para cuidar de ti.&quot;}</span>
+<span class="line"><i>73</i>        &lt;/p&gt;</span>
+<span class="line"><i>74</i>      &lt;/div&gt;</span>
+<span class="line"><i>75</i>      &lt;section className=&quot;welcome-banner&quot;&gt;</span>
+<span class="line"><i>76</i>        &lt;div&gt;</span>
+<span class="line"><i>77</i>          &lt;span className=&quot;eyebrow light&quot;&gt;CUIDARTE ES LO PRIMERO&lt;/span&gt;</span>
+<span class="line"><i>78</i>          &lt;h2&gt;</span>
+<span class="line"><i>79</i>            {user.userType === &quot;doctor&quot;</span>
+<span class="line"><i>80</i>              ? &quot;Una atención más cercana, una agenda más clara.&quot;</span>
+<span class="line"><i>81</i>              : &quot;Tu próxima consulta, sin complicaciones.&quot;}</span>
+<span class="line"><i>82</i>          &lt;/h2&gt;</span>
+<span class="line"><i>83</i>          &lt;p&gt;</span>
+<span class="line"><i>84</i>            {user.userType === &quot;doctor&quot;</span>
+<span class="line"><i>85</i>              ? &quot;Revisa y confirma las citas de tus pacientes desde un solo lugar.&quot;</span>
+<span class="line"><i>86</i>              : &quot;Encuentra a tu especialista y reserva el momento ideal para tu salud.&quot;}</span>
+<span class="line"><i>87</i>          &lt;/p&gt;</span>
+<span class="line"><i>88</i>          {user.userType === &quot;patient&quot; &amp;&amp; (</span>
+<span class="line"><i>89</i>            &lt;Link className=&quot;banner-button&quot; to=&quot;/agendar&quot;&gt;</span>
+<span class="line"><i>90</i>              Agendar una consulta</span>
+<span class="line"><i>91</i>              &lt;ArrowUpRight size={18} /&gt;</span>
+<span class="line"><i>92</i>            &lt;/Link&gt;</span>
+<span class="line"><i>93</i>          )}</span>
+<span class="line"><i>94</i>        &lt;/div&gt;</span>
+<span class="line"><i>95</i>        &lt;div className=&quot;banner-art&quot; aria-hidden=&quot;true&quot;&gt;</span>
+<span class="line"><i>96</i>          &lt;HeartPulse size={110} strokeWidth={1} /&gt;</span>
+<span class="line"><i>97</i>          &lt;div className=&quot;banner-circle&quot; /&gt;</span>
+<span class="line"><i>98</i>        &lt;/div&gt;</span>
+<span class="line"><i>99</i>      &lt;/section&gt;</span>
+<span class="line"><i>100</i>      &lt;section className=&quot;stats-grid&quot; aria-label=&quot;Resumen de citas&quot;&gt;</span>
+<span class="line"><i>101</i>        {[</span>
+<span class="line"><i>102</i>          {</span>
+<span class="line"><i>103</i>            label: &quot;Citas activas&quot;,</span>
+<span class="line"><i>104</i>            value: active.length,</span>
+<span class="line"><i>105</i>            icon: CalendarDays,</span>
+<span class="line"><i>106</i>            color: &quot;teal&quot;,</span>
+<span class="line"><i>107</i>          },</span>
+<span class="line"><i>108</i>          {</span>
+<span class="line"><i>109</i>            label: &quot;Por confirmar&quot;,</span>
+<span class="line"><i>110</i>            value: active.filter((a) =&gt; a.status === &quot;pending&quot;).length,</span>
+<span class="line"><i>111</i>            icon: Clock3,</span>
+<span class="line"><i>112</i>            color: &quot;amber&quot;,</span>
+<span class="line"><i>113</i>          },</span>
+<span class="line"><i>114</i>          {</span>
+<span class="line"><i>115</i>            label: &quot;Consultas completadas&quot;,</span>
+<span class="line"><i>116</i>            value: completed,</span>
+<span class="line"><i>117</i>            icon: Stethoscope,</span>
+<span class="line"><i>118</i>            color: &quot;blue&quot;,</span>
+<span class="line"><i>119</i>          },</span>
+<span class="line"><i>120</i>        ].map(({ label, value, icon: Icon, color }) =&gt; (</span>
+<span class="line"><i>121</i>          &lt;div className=&quot;stat-card&quot; key={label}&gt;</span>
+<span class="line"><i>122</i>            &lt;span className={&quot;stat-icon &quot; + color}&gt;</span>
+<span class="line"><i>123</i>              &lt;Icon size={23} /&gt;</span>
+<span class="line"><i>124</i>            &lt;/span&gt;</span>
+<span class="line"><i>125</i>            &lt;div&gt;</span>
+<span class="line"><i>126</i>              &lt;p&gt;{label}&lt;/p&gt;</span>
+<span class="line"><i>127</i>              &lt;strong&gt;{appointments.isPending ? &quot;—&quot; : value}&lt;/strong&gt;</span>
+<span class="line"><i>128</i>            &lt;/div&gt;</span>
+<span class="line"><i>129</i>          &lt;/div&gt;</span>
+<span class="line"><i>130</i>        ))}</span>
+<span class="line"><i>131</i>      &lt;/section&gt;</span>
+<span class="line"><i>132</i>      &lt;div className=&quot;section-heading&quot;&gt;</span>
+<span class="line"><i>133</i>        &lt;div&gt;</span>
+<span class="line"><i>134</i>          &lt;h2&gt;</span>
+<span class="line"><i>135</i>            {user.userType === &quot;doctor&quot;</span>
+<span class="line"><i>136</i>              ? &quot;Agenda de pacientes&quot;</span>
+<span class="line"><i>137</i>              : &quot;Tus consultas&quot;}</span>
+<span class="line"><i>138</i>          &lt;/h2&gt;</span>
+<span class="line"><i>139</i>          &lt;p&gt;Todo lo que necesitas saber sobre tu atención.&lt;/p&gt;</span>
+<span class="line"><i>140</i>        &lt;/div&gt;</span>
+<span class="line"><i>141</i>        {user.userType === &quot;patient&quot; &amp;&amp; (</span>
+<span class="line"><i>142</i>          &lt;Link</span>
+<span class="line"><i>143</i>            to=&quot;/agendar&quot;</span>
+<span class="line"><i>144</i>            className=&quot;text-teal-700 font-semibold text-sm flex items-center gap-2&quot;</span>
+<span class="line"><i>145</i>          &gt;</span>
+<span class="line"><i>146</i>            &lt;Plus size={16} /&gt;</span>
+<span class="line"><i>147</i>            Nueva cita</span>
+<span class="line"><i>148</i>          &lt;/Link&gt;</span>
+<span class="line"><i>149</i>        )}</span>
+<span class="line"><i>150</i>      &lt;/div&gt;</span>
+<span class="line"><i>151</i>      &lt;AppointmentsListWithSupabase currentUser={user} /&gt;</span>
+<span class="line"><i>152</i>      &lt;MedicalNotes /&gt;</span>
+<span class="line"><i>153</i>    &lt;/div&gt;</span>
+<span class="line"><i>154</i>  );</span>
+<span class="line"><i>155</i>}</span></code></pre></section><section><h3>Después · rama de Ángel</h3><pre><code><span class="line"><i>1</i>import PageHeading from &quot;@/components/PageHeading&quot;;</span>
+<span class="line"><i>2</i>import MedicalNotes from &quot;@/components/MedicalNotes&quot;;</span>
+<span class="line"><i>3</i>import { Link, Navigate } from &quot;react-router-dom&quot;;</span>
+<span class="line"><i>4</i>import {</span>
+<span class="line"><i>5</i>  CalendarDays,</span>
+<span class="line"><i>6</i>  ArrowUpRight,</span>
+<span class="line"><i>7</i>  Stethoscope,</span>
+<span class="line"><i>8</i>  HeartPulse,</span>
+<span class="line"><i>9</i>  Clock3,</span>
+<span class="line"><i>10</i>  Plus,</span>
+<span class="line"><i>11</i>} from &quot;lucide-react&quot;;</span>
+<span class="line"><i>12</i>import { useAuth } from &quot;@/hooks/useAuth&quot;;</span>
+<span class="line"><i>13</i>import { useAppointments } from &quot;@/hooks/useSupabaseData&quot;;</span>
+<span class="line"><i>14</i>import AppointmentFormWithSupabase from &quot;@/components/AppointmentFormWithSupabase&quot;;</span>
+<span class="line"><i>15</i>import AppointmentsListWithSupabase from &quot;@/components/AppointmentsListWithSupabase&quot;;</span>
+<span class="line"><i>16</i>export default function Dashboard({</span>
+<span class="line"><i>17</i>  view,</span>
+<span class="line"><i>18</i>}: {</span>
+<span class="line"><i>19</i>  view?: &quot;book&quot; | &quot;appointments&quot;;</span>
+<span class="line"><i>20</i>}) {</span>
+<span class="line"><i>21</i>  const { user } = useAuth();</span>
+<span class="line"><i>22</i>  const appointments = useAppointments();</span>
+<span class="line"><i>23</i>  if (!user) return null;</span>
+<span class="line"><i>24</i>  if (user.userType === &quot;admin&quot;) return &lt;Navigate to=&quot;/admin&quot; replace /&gt;;</span>
+<span class="line"><i>25</i>  if (view === &quot;book&quot;)</span>
+<span class="line"><i>26</i>    return (</span>
+<span class="line"><i>27</i>      &lt;&gt;</span>
+<span class="line"><i>28</i>        &lt;PageHeading</span>
+<span class="line"><i>29</i>          eyebrow=&quot;UN PASO HACIA TU BIENESTAR&quot;</span>
+<span class="line"><i>30</i>          title=&quot;Agenda tu próxima consulta&quot;</span>
+<span class="line"><i>31</i>          description=&quot;Elige el centro, especialista y horario que mejor se adapten a ti.&quot;</span>
+<span class="line"><i>32</i>        /&gt;</span>
+<span class="line"><i>33</i>        &lt;AppointmentFormWithSupabase currentUser={user} /&gt;</span>
+<span class="line"><i>34</i>      &lt;/&gt;</span>
+<span class="line"><i>35</i>    );</span>
+<span class="line"><i>36</i>  if (view === &quot;appointments&quot;)</span>
+<span class="line"><i>37</i>    return (</span>
+<span class="line"><i>38</i>      &lt;&gt;</span>
+<span class="line"><i>39</i>        &lt;PageHeading</span>
+<span class="line"><i>40</i>          eyebrow=&quot;TU ATENCIÓN, ORGANIZADA&quot;</span>
+<span class="line"><i>41</i>          title=&quot;Mis citas&quot;</span>
+<span class="line"><i>42</i>          description=&quot;Consulta el estado de tus reservas y administra tus próximas visitas.&quot;</span>
+<span class="line"><i>43</i>        /&gt;</span>
+<span class="line"><i>44</i>        &lt;AppointmentsListWithSupabase currentUser={user} /&gt;</span>
+<span class="line"><i>45</i>      &lt;/&gt;</span>
+<span class="line"><i>46</i>    );</span>
+<span class="line"><i>47</i>  const active =</span>
+<span class="line"><i>48</i>    appointments.data?.filter((a) =&gt;</span>
+<span class="line"><i>49</i>      [&quot;pending&quot;, &quot;confirmed&quot;].includes(a.status),</span>
+<span class="line"><i>50</i>    ) ?? [];</span>
+<span class="line"><i>51</i>  const completed =</span>
+<span class="line"><i>52</i>    appointments.data?.filter((a) =&gt; a.status === &quot;completed&quot;).length ?? 0;</span>
+<span class="line"><i>53</i>  return (</span>
+<span class="line"><i>54</i>    &lt;div className=&quot;space-y-7&quot;&gt;</span>
+<span class="line"><i>55</i>      &lt;PageHeading</span>
+<span class="line"><i>56</i>        eyebrow={</span>
+<span class="line"><i>57</i>          user.userType === &quot;doctor&quot;</span>
+<span class="line"><i>58</i>            ? &quot;TU AGENDA DE HOY&quot;</span>
+<span class="line"><i>59</i>            : &quot;TU ESPACIO DE BIENESTAR&quot;</span>
+<span class="line"><i>60</i>        }</span>
+<span class="line"><i>61</i>        title={</span>
+<span class="line"><i>62</i>          &lt;&gt;</span>
+<span class="line"><i>63</i>            Hola, {user.name.split(&quot; &quot;)[0]}{&quot; &quot;}</span>
+<span class="line"><i>64</i>            &lt;span className=&quot;greeting-dot&quot;&gt;.&lt;/span&gt;</span>
+<span class="line"><i>65</i>          &lt;/&gt;</span>
+<span class="line"><i>66</i>        }</span>
+<span class="line"><i>67</i>        description={</span>
+<span class="line"><i>68</i>          user.userType === &quot;doctor&quot;</span>
+<span class="line"><i>69</i>            ? &quot;Cada consulta es una oportunidad para cuidar.&quot;</span>
+<span class="line"><i>70</i>            : &quot;Qué bueno que te tomes un momento para cuidar de ti.&quot;</span>
+<span class="line"><i>71</i>        }</span>
+<span class="line"><i>72</i>      /&gt;</span>
+<span class="line"><i>73</i>      &lt;section className=&quot;welcome-banner&quot;&gt;</span>
+<span class="line"><i>74</i>        &lt;div&gt;</span>
+<span class="line"><i>75</i>          &lt;span className=&quot;eyebrow light&quot;&gt;CUIDARTE ES LO PRIMERO&lt;/span&gt;</span>
+<span class="line"><i>76</i>          &lt;h2&gt;</span>
+<span class="line"><i>77</i>            {user.userType === &quot;doctor&quot;</span>
+<span class="line"><i>78</i>              ? &quot;Una atención más cercana, una agenda más clara.&quot;</span>
+<span class="line"><i>79</i>              : &quot;Tu próxima consulta, sin complicaciones.&quot;}</span>
+<span class="line"><i>80</i>          &lt;/h2&gt;</span>
+<span class="line"><i>81</i>          &lt;p&gt;</span>
+<span class="line"><i>82</i>            {user.userType === &quot;doctor&quot;</span>
+<span class="line"><i>83</i>              ? &quot;Revisa y confirma las citas de tus pacientes desde un solo lugar.&quot;</span>
+<span class="line"><i>84</i>              : &quot;Encuentra a tu especialista y reserva el momento ideal para tu salud.&quot;}</span>
+<span class="line"><i>85</i>          &lt;/p&gt;</span>
+<span class="line"><i>86</i>          {user.userType === &quot;patient&quot; &amp;&amp; (</span>
+<span class="line"><i>87</i>            &lt;Link className=&quot;banner-button&quot; to=&quot;/agendar&quot;&gt;</span>
+<span class="line"><i>88</i>              Agendar una consulta</span>
+<span class="line"><i>89</i>              &lt;ArrowUpRight size={18} /&gt;</span>
+<span class="line"><i>90</i>            &lt;/Link&gt;</span>
+<span class="line"><i>91</i>          )}</span>
+<span class="line"><i>92</i>        &lt;/div&gt;</span>
+<span class="line"><i>93</i>        &lt;div className=&quot;banner-art&quot; aria-hidden=&quot;true&quot;&gt;</span>
+<span class="line"><i>94</i>          &lt;HeartPulse size={110} strokeWidth={1} /&gt;</span>
+<span class="line"><i>95</i>          &lt;div className=&quot;banner-circle&quot; /&gt;</span>
+<span class="line"><i>96</i>        &lt;/div&gt;</span>
+<span class="line"><i>97</i>      &lt;/section&gt;</span>
+<span class="line"><i>98</i>      &lt;section className=&quot;stats-grid&quot; aria-label=&quot;Resumen de citas&quot;&gt;</span>
+<span class="line"><i>99</i>        {[</span>
+<span class="line"><i>100</i>          {</span>
+<span class="line"><i>101</i>            label: &quot;Citas activas&quot;,</span>
+<span class="line"><i>102</i>            value: active.length,</span>
+<span class="line"><i>103</i>            icon: CalendarDays,</span>
+<span class="line"><i>104</i>            color: &quot;teal&quot;,</span>
+<span class="line"><i>105</i>          },</span>
+<span class="line"><i>106</i>          {</span>
+<span class="line"><i>107</i>            label: &quot;Por confirmar&quot;,</span>
+<span class="line"><i>108</i>            value: active.filter((a) =&gt; a.status === &quot;pending&quot;).length,</span>
+<span class="line"><i>109</i>            icon: Clock3,</span>
+<span class="line"><i>110</i>            color: &quot;amber&quot;,</span>
+<span class="line"><i>111</i>          },</span>
+<span class="line"><i>112</i>          {</span>
+<span class="line"><i>113</i>            label: &quot;Consultas completadas&quot;,</span>
+<span class="line"><i>114</i>            value: completed,</span>
+<span class="line"><i>115</i>            icon: Stethoscope,</span>
+<span class="line"><i>116</i>            color: &quot;blue&quot;,</span>
+<span class="line"><i>117</i>          },</span>
+<span class="line"><i>118</i>        ].map(({ label, value, icon: Icon, color }) =&gt; (</span>
+<span class="line"><i>119</i>          &lt;div className=&quot;stat-card&quot; key={label}&gt;</span>
+<span class="line"><i>120</i>            &lt;span className={&quot;stat-icon &quot; + color}&gt;</span>
+<span class="line"><i>121</i>              &lt;Icon size={23} /&gt;</span>
+<span class="line"><i>122</i>            &lt;/span&gt;</span>
+<span class="line"><i>123</i>            &lt;div&gt;</span>
+<span class="line"><i>124</i>              &lt;p&gt;{label}&lt;/p&gt;</span>
+<span class="line"><i>125</i>              &lt;strong&gt;{appointments.isPending ? &quot;—&quot; : value}&lt;/strong&gt;</span>
+<span class="line"><i>126</i>            &lt;/div&gt;</span>
+<span class="line"><i>127</i>          &lt;/div&gt;</span>
+<span class="line"><i>128</i>        ))}</span>
+<span class="line"><i>129</i>      &lt;/section&gt;</span>
+<span class="line"><i>130</i>      &lt;div className=&quot;section-heading&quot;&gt;</span>
+<span class="line"><i>131</i>        &lt;div&gt;</span>
+<span class="line"><i>132</i>          &lt;h2&gt;</span>
+<span class="line"><i>133</i>            {user.userType === &quot;doctor&quot;</span>
+<span class="line"><i>134</i>              ? &quot;Agenda de pacientes&quot;</span>
+<span class="line"><i>135</i>              : &quot;Tus consultas&quot;}</span>
+<span class="line"><i>136</i>          &lt;/h2&gt;</span>
+<span class="line"><i>137</i>          &lt;p&gt;Todo lo que necesitas saber sobre tu atención.&lt;/p&gt;</span>
+<span class="line"><i>138</i>        &lt;/div&gt;</span>
+<span class="line"><i>139</i>        {user.userType === &quot;patient&quot; &amp;&amp; (</span>
+<span class="line"><i>140</i>          &lt;Link</span>
+<span class="line"><i>141</i>            to=&quot;/agendar&quot;</span>
+<span class="line"><i>142</i>            className=&quot;text-teal-700 font-semibold text-sm flex items-center gap-2&quot;</span>
+<span class="line"><i>143</i>          &gt;</span>
+<span class="line"><i>144</i>            &lt;Plus size={16} /&gt;</span>
+<span class="line"><i>145</i>            Nueva cita</span>
+<span class="line"><i>146</i>          &lt;/Link&gt;</span>
+<span class="line"><i>147</i>        )}</span>
+<span class="line"><i>148</i>      &lt;/div&gt;</span>
+<span class="line"><i>149</i>      &lt;AppointmentsListWithSupabase currentUser={user} /&gt;</span>
+<span class="line"><i>150</i>      &lt;MedicalNotes /&gt;</span>
+<span class="line"><i>151</i>    &lt;/div&gt;</span>
+<span class="line"><i>152</i>  );</span>
+<span class="line"><i>153</i>}</span></code></pre></section></div></details><details><summary>src/pages/AdminDashboard.tsx</summary><div class="comparison"><section><h3>Antes · 8f76545</h3><pre><code><span class="line"><i>1</i>import AdminRoleForm from &quot;@/components/AdminRoleForm&quot;;</span>
+<span class="line"><i>2</i>import { useQuery } from &quot;@tanstack/react-query&quot;;</span>
+<span class="line"><i>3</i>import { supabase } from &quot;@/integrations/supabase/client&quot;;</span>
+<span class="line"><i>4</i>import AdminStats from &quot;@/components/AdminStats&quot;;</span>
+<span class="line"><i>5</i>export default function AdminDashboard() {</span>
+<span class="line"><i>6</i>  const query = useQuery({</span>
+<span class="line"><i>7</i>    queryKey: [&quot;admin-summary&quot;],</span>
+<span class="line"><i>8</i>    queryFn: async () =&gt; {</span>
+<span class="line"><i>9</i>      const [profiles, appointments] = await Promise.all([</span>
+<span class="line"><i>10</i>        supabase</span>
+<span class="line"><i>11</i>          .from(&quot;profiles&quot;)</span>
+<span class="line"><i>12</i>          .select(&quot;id,email,name,user_type&quot;)</span>
+<span class="line"><i>13</i>          .order(&quot;created_at&quot;, { ascending: false }),</span>
+<span class="line"><i>14</i>        supabase</span>
+<span class="line"><i>15</i>          .from(&quot;appointments&quot;)</span>
+<span class="line"><i>16</i>          .select(&quot;id&quot;, { count: &quot;exact&quot;, head: true }),</span>
+<span class="line"><i>17</i>      ]);</span>
+<span class="line"><i>18</i>      if (profiles.error) throw profiles.error;</span>
+<span class="line"><i>19</i>      if (appointments.error) throw appointments.error;</span>
+<span class="line"><i>20</i>      return { profiles: profiles.data, count: appointments.count ?? 0 };</span>
+<span class="line"><i>21</i>    },</span>
+<span class="line"><i>22</i>  });</span>
+<span class="line"><i>23</i>  return (</span>
+<span class="line"><i>24</i>    &lt;div className=&quot;space-y-7&quot;&gt;</span>
+<span class="line"><i>25</i>      &lt;div className=&quot;page-heading&quot;&gt;</span>
+<span class="line"><i>26</i>        &lt;span className=&quot;eyebrow&quot;&gt;VISIÓN GENERAL&lt;/span&gt;</span>
+<span class="line"><i>27</i>        &lt;h1&gt;Panel de administración&lt;/h1&gt;</span>
+<span class="line"><i>28</i>        &lt;p&gt;Las personas y la atención que hacen posible MediCitas.&lt;/p&gt;</span>
+<span class="line"><i>29</i>      &lt;/div&gt;</span>
+<span class="line"><i>30</i>      {query.isPending ? (</span>
+<span class="line"><i>31</i>        &lt;p role=&quot;status&quot;&gt;Cargando estadísticas...&lt;/p&gt;</span>
+<span class="line"><i>32</i>      ) : query.isError ? (</span>
+<span class="line"><i>33</i>        &lt;div role=&quot;alert&quot; className=&quot;notice error&quot;&gt;</span>
+<span class="line"><i>34</i>          No se pudo cargar el panel.{&quot; &quot;}</span>
+<span class="line"><i>35</i>          &lt;button onClick={() =&gt; query.refetch()} className=&quot;underline&quot;&gt;</span>
+<span class="line"><i>36</i>            Reintentar</span>
+<span class="line"><i>37</i>          &lt;/button&gt;</span>
+<span class="line"><i>38</i>        &lt;/div&gt;</span>
+<span class="line"><i>39</i>      ) : (</span>
+<span class="line"><i>40</i>        &lt;&gt;</span>
+<span class="line"><i>41</i>          &lt;AdminStats</span>
+<span class="line"><i>42</i>            patients={</span>
+<span class="line"><i>43</i>              query.data.profiles.filter((p) =&gt; p.user_type === &quot;patient&quot;)</span>
+<span class="line"><i>44</i>                .length</span>
+<span class="line"><i>45</i>            }</span>
+<span class="line"><i>46</i>            doctors={</span>
+<span class="line"><i>47</i>              query.data.profiles.filter((p) =&gt; p.user_type === &quot;doctor&quot;).length</span>
+<span class="line"><i>48</i>            }</span>
+<span class="line"><i>49</i>            appointments={query.data.count}</span>
+<span class="line"><i>50</i>          /&gt;</span>
+<span class="line"><i>51</i>          &lt;section className=&quot;surface&quot;&gt;</span>
+<span class="line"><i>52</i>            &lt;div className=&quot;section-heading&quot;&gt;</span>
+<span class="line"><i>53</i>              &lt;div&gt;</span>
+<span class="line"><i>54</i>                &lt;h2&gt;Cuentas registradas&lt;/h2&gt;</span>
+<span class="line"><i>55</i>                &lt;p&gt;Los roles se administran de forma segura en el servidor.&lt;/p&gt;</span>
+<span class="line"><i>56</i>              &lt;/div&gt;</span>
+<span class="line"><i>57</i>              &lt;span className=&quot;text-sm text-slate-500&quot;&gt;</span>
+<span class="line"><i>58</i>                {query.data.profiles.length} cuentas</span>
+<span class="line"><i>59</i>              &lt;/span&gt;</span>
+<span class="line"><i>60</i>            &lt;/div&gt;</span>
+<span class="line"><i>61</i>            &lt;div className=&quot;overflow-x-auto&quot;&gt;</span>
+<span class="line"><i>62</i>              &lt;table className=&quot;users-table&quot;&gt;</span>
+<span class="line"><i>63</i>                &lt;thead&gt;</span>
+<span class="line"><i>64</i>                  &lt;tr&gt;</span>
+<span class="line"><i>65</i>                    &lt;th&gt;Nombre&lt;/th&gt;</span>
+<span class="line"><i>66</i>                    &lt;th&gt;Correo electrónico&lt;/th&gt;</span>
+<span class="line"><i>67</i>                    &lt;th&gt;Rol&lt;/th&gt;</span>
+<span class="line"><i>68</i>                  &lt;/tr&gt;</span>
+<span class="line"><i>69</i>                &lt;/thead&gt;</span>
+<span class="line"><i>70</i>                &lt;tbody&gt;</span>
+<span class="line"><i>71</i>                  {query.data.profiles.map((p) =&gt; (</span>
+<span class="line"><i>72</i>                    &lt;tr key={p.id}&gt;</span>
+<span class="line"><i>73</i>                      &lt;td&gt;{p.name}&lt;/td&gt;</span>
+<span class="line"><i>74</i>                      &lt;td&gt;{p.email}&lt;/td&gt;</span>
+<span class="line"><i>75</i>                      &lt;td&gt;</span>
+<span class="line"><i>76</i>                        &lt;span className=&quot;role-badge&quot;&gt;</span>
+<span class="line"><i>77</i>                          {</span>
+<span class="line"><i>78</i>                            {</span>
+<span class="line"><i>79</i>                              patient: &quot;Paciente&quot;,</span>
+<span class="line"><i>80</i>                              doctor: &quot;Médico&quot;,</span>
+<span class="line"><i>81</i>                              admin: &quot;Administrador&quot;,</span>
+<span class="line"><i>82</i>                            }[p.user_type]</span>
+<span class="line"><i>83</i>                          }</span>
+<span class="line"><i>84</i>                        &lt;/span&gt;</span>
+<span class="line"><i>85</i>                      &lt;/td&gt;</span>
+<span class="line"><i>86</i>                    &lt;/tr&gt;</span>
+<span class="line"><i>87</i>                  ))}</span>
+<span class="line"><i>88</i>                &lt;/tbody&gt;</span>
+<span class="line"><i>89</i>              &lt;/table&gt;</span>
+<span class="line"><i>90</i>            &lt;/div&gt;</span>
+<span class="line"><i>91</i>          &lt;/section&gt;</span>
+<span class="line"><i>92</i>          &lt;AdminRoleForm profiles={query.data.profiles} /&gt;</span>
+<span class="line"><i>93</i>        &lt;/&gt;</span>
+<span class="line"><i>94</i>      )}</span>
+<span class="line"><i>95</i>    &lt;/div&gt;</span>
+<span class="line"><i>96</i>  );</span>
+<span class="line"><i>97</i>}</span></code></pre></section><section><h3>Después · rama de Ángel</h3><pre><code><span class="line"><i>1</i>import PageHeading from &quot;@/components/PageHeading&quot;;</span>
+<span class="line"><i>2</i>import AdminRoleForm from &quot;@/components/AdminRoleForm&quot;;</span>
+<span class="line"><i>3</i>import { useQuery } from &quot;@tanstack/react-query&quot;;</span>
+<span class="line"><i>4</i>import { supabase } from &quot;@/integrations/supabase/client&quot;;</span>
+<span class="line"><i>5</i>import AdminStats from &quot;@/components/AdminStats&quot;;</span>
+<span class="line"><i>6</i>export default function AdminDashboard() {</span>
+<span class="line"><i>7</i>  const query = useQuery({</span>
+<span class="line"><i>8</i>    queryKey: [&quot;admin-summary&quot;],</span>
+<span class="line"><i>9</i>    queryFn: async () =&gt; {</span>
+<span class="line"><i>10</i>      const [profiles, appointments] = await Promise.all([</span>
+<span class="line"><i>11</i>        supabase</span>
+<span class="line"><i>12</i>          .from(&quot;profiles&quot;)</span>
+<span class="line"><i>13</i>          .select(&quot;id,email,name,user_type&quot;)</span>
+<span class="line"><i>14</i>          .order(&quot;created_at&quot;, { ascending: false }),</span>
+<span class="line"><i>15</i>        supabase</span>
+<span class="line"><i>16</i>          .from(&quot;appointments&quot;)</span>
+<span class="line"><i>17</i>          .select(&quot;id&quot;, { count: &quot;exact&quot;, head: true }),</span>
+<span class="line"><i>18</i>      ]);</span>
+<span class="line"><i>19</i>      if (profiles.error) throw profiles.error;</span>
+<span class="line"><i>20</i>      if (appointments.error) throw appointments.error;</span>
+<span class="line"><i>21</i>      return { profiles: profiles.data, count: appointments.count ?? 0 };</span>
+<span class="line"><i>22</i>    },</span>
+<span class="line"><i>23</i>  });</span>
+<span class="line"><i>24</i>  return (</span>
+<span class="line"><i>25</i>    &lt;div className=&quot;space-y-7&quot;&gt;</span>
+<span class="line"><i>26</i>      &lt;PageHeading</span>
+<span class="line"><i>27</i>        eyebrow=&quot;VISIÓN GENERAL&quot;</span>
+<span class="line"><i>28</i>        title=&quot;Panel de administración&quot;</span>
+<span class="line"><i>29</i>        description=&quot;Las personas y la atención que hacen posible MediCitas.&quot;</span>
+<span class="line"><i>30</i>      /&gt;</span>
+<span class="line"><i>31</i>      {query.isPending ? (</span>
+<span class="line"><i>32</i>        &lt;p role=&quot;status&quot;&gt;Cargando estadísticas...&lt;/p&gt;</span>
+<span class="line"><i>33</i>      ) : query.isError ? (</span>
+<span class="line"><i>34</i>        &lt;div role=&quot;alert&quot; className=&quot;notice error&quot;&gt;</span>
+<span class="line"><i>35</i>          No se pudo cargar el panel.{&quot; &quot;}</span>
+<span class="line"><i>36</i>          &lt;button onClick={() =&gt; query.refetch()} className=&quot;underline&quot;&gt;</span>
+<span class="line"><i>37</i>            Reintentar</span>
+<span class="line"><i>38</i>          &lt;/button&gt;</span>
+<span class="line"><i>39</i>        &lt;/div&gt;</span>
+<span class="line"><i>40</i>      ) : (</span>
+<span class="line"><i>41</i>        &lt;&gt;</span>
+<span class="line"><i>42</i>          &lt;AdminStats</span>
+<span class="line"><i>43</i>            patients={</span>
+<span class="line"><i>44</i>              query.data.profiles.filter((p) =&gt; p.user_type === &quot;patient&quot;)</span>
+<span class="line"><i>45</i>                .length</span>
+<span class="line"><i>46</i>            }</span>
+<span class="line"><i>47</i>            doctors={</span>
+<span class="line"><i>48</i>              query.data.profiles.filter((p) =&gt; p.user_type === &quot;doctor&quot;).length</span>
+<span class="line"><i>49</i>            }</span>
+<span class="line"><i>50</i>            appointments={query.data.count}</span>
+<span class="line"><i>51</i>          /&gt;</span>
+<span class="line"><i>52</i>          &lt;section className=&quot;surface&quot;&gt;</span>
+<span class="line"><i>53</i>            &lt;div className=&quot;section-heading&quot;&gt;</span>
+<span class="line"><i>54</i>              &lt;div&gt;</span>
+<span class="line"><i>55</i>                &lt;h2&gt;Cuentas registradas&lt;/h2&gt;</span>
+<span class="line"><i>56</i>                &lt;p&gt;Los roles se administran de forma segura en el servidor.&lt;/p&gt;</span>
+<span class="line"><i>57</i>              &lt;/div&gt;</span>
+<span class="line"><i>58</i>              &lt;span className=&quot;text-sm text-slate-500&quot;&gt;</span>
+<span class="line"><i>59</i>                {query.data.profiles.length} cuentas</span>
+<span class="line"><i>60</i>              &lt;/span&gt;</span>
+<span class="line"><i>61</i>            &lt;/div&gt;</span>
+<span class="line"><i>62</i>            &lt;div className=&quot;overflow-x-auto&quot;&gt;</span>
+<span class="line"><i>63</i>              &lt;table className=&quot;users-table&quot;&gt;</span>
+<span class="line"><i>64</i>                &lt;thead&gt;</span>
+<span class="line"><i>65</i>                  &lt;tr&gt;</span>
+<span class="line"><i>66</i>                    &lt;th&gt;Nombre&lt;/th&gt;</span>
+<span class="line"><i>67</i>                    &lt;th&gt;Correo electrónico&lt;/th&gt;</span>
+<span class="line"><i>68</i>                    &lt;th&gt;Rol&lt;/th&gt;</span>
+<span class="line"><i>69</i>                  &lt;/tr&gt;</span>
+<span class="line"><i>70</i>                &lt;/thead&gt;</span>
+<span class="line"><i>71</i>                &lt;tbody&gt;</span>
+<span class="line"><i>72</i>                  {query.data.profiles.map((p) =&gt; (</span>
+<span class="line"><i>73</i>                    &lt;tr key={p.id}&gt;</span>
+<span class="line"><i>74</i>                      &lt;td&gt;{p.name}&lt;/td&gt;</span>
+<span class="line"><i>75</i>                      &lt;td&gt;{p.email}&lt;/td&gt;</span>
+<span class="line"><i>76</i>                      &lt;td&gt;</span>
+<span class="line"><i>77</i>                        &lt;span className=&quot;role-badge&quot;&gt;</span>
+<span class="line"><i>78</i>                          {</span>
+<span class="line"><i>79</i>                            {</span>
+<span class="line"><i>80</i>                              patient: &quot;Paciente&quot;,</span>
+<span class="line"><i>81</i>                              doctor: &quot;Médico&quot;,</span>
+<span class="line"><i>82</i>                              admin: &quot;Administrador&quot;,</span>
+<span class="line"><i>83</i>                            }[p.user_type]</span>
+<span class="line"><i>84</i>                          }</span>
+<span class="line"><i>85</i>                        &lt;/span&gt;</span>
+<span class="line"><i>86</i>                      &lt;/td&gt;</span>
+<span class="line"><i>87</i>                    &lt;/tr&gt;</span>
+<span class="line"><i>88</i>                  ))}</span>
+<span class="line"><i>89</i>                &lt;/tbody&gt;</span>
+<span class="line"><i>90</i>              &lt;/table&gt;</span>
+<span class="line"><i>91</i>            &lt;/div&gt;</span>
+<span class="line"><i>92</i>          &lt;/section&gt;</span>
+<span class="line"><i>93</i>          &lt;AdminRoleForm profiles={query.data.profiles} /&gt;</span>
+<span class="line"><i>94</i>        &lt;/&gt;</span>
+<span class="line"><i>95</i>      )}</span>
+<span class="line"><i>96</i>    &lt;/div&gt;</span>
+<span class="line"><i>97</i>  );</span>
+<span class="line"><i>98</i>}</span></code></pre></section></div></details><details><summary>src/pages/PatientProfile.tsx</summary><div class="comparison"><section><h3>Antes · 8f76545</h3><pre><code><span class="line"><i>1</i>import { useState, type FormEvent } from &quot;react&quot;;</span>
+<span class="line"><i>2</i>import { useQuery, useQueryClient } from &quot;@tanstack/react-query&quot;;</span>
+<span class="line"><i>3</i>import { useAuth } from &quot;@/hooks/useAuth&quot;;</span>
+<span class="line"><i>4</i>import { supabase } from &quot;@/integrations/supabase/client&quot;;</span>
+<span class="line"><i>5</i>import PatientHistory from &quot;@/components/PatientHistory&quot;;</span>
+<span class="line"><i>6</i>import { Button } from &quot;@/components/ui/button&quot;;</span>
+<span class="line"><i>7</i>import { Input } from &quot;@/components/ui/input&quot;;</span>
+<span class="line"><i>8</i>import { Label } from &quot;@/components/ui/label&quot;;</span>
+<span class="line"><i>9</i>import { UserRound, Mail, ShieldCheck } from &quot;lucide-react&quot;;</span>
+<span class="line"><i>10</i>import { z } from &quot;zod&quot;;</span>
+<span class="line"><i>11</i>type Profile = { id: string; name: string; phone: string | null };</span>
+<span class="line"><i>12</i>const schema = z.object({</span>
+<span class="line"><i>13</i>  name: z.string().trim().min(2, &quot;Escribe al menos 2 caracteres.&quot;).max(100),</span>
+<span class="line"><i>14</i>  phone: z</span>
+<span class="line"><i>15</i>    .string()</span>
+<span class="line"><i>16</i>    .trim()</span>
+<span class="line"><i>17</i>    .refine(</span>
+<span class="line"><i>18</i>      (v) =&gt;</span>
+<span class="line"><i>19</i>        !v || (/^[+\d ()-]{7,25}$/.test(v) &amp;&amp; v.replace(/\D/g, &quot;&quot;).length &gt;= 7),</span>
+<span class="line"><i>20</i>      &quot;Ingresa un teléfono válido.&quot;,</span>
+<span class="line"><i>21</i>    ),</span>
+<span class="line"><i>22</i>});</span>
+<span class="line"><i>23</i>function DetailsForm({ profile }: { profile: Profile }) {</span>
+<span class="line"><i>24</i>  const { refreshUser } = useAuth();</span>
+<span class="line"><i>25</i>  const client = useQueryClient();</span>
+<span class="line"><i>26</i>  const [name, setName] = useState(profile.name);</span>
+<span class="line"><i>27</i>  const [phone, setPhone] = useState(profile.phone ?? &quot;&quot;);</span>
+<span class="line"><i>28</i>  const [busy, setBusy] = useState(false);</span>
+<span class="line"><i>29</i>  const [error, setError] = useState(&quot;&quot;);</span>
+<span class="line"><i>30</i>  const [message, setMessage] = useState(&quot;&quot;);</span>
+<span class="line"><i>31</i>  async function save(e: FormEvent) {</span>
+<span class="line"><i>32</i>    e.preventDefault();</span>
+<span class="line"><i>33</i>    setError(&quot;&quot;);</span>
+<span class="line"><i>34</i>    setMessage(&quot;&quot;);</span>
+<span class="line"><i>35</i>    const parsed = schema.safeParse({ name, phone });</span>
+<span class="line"><i>36</i>    if (!parsed.success) {</span>
+<span class="line"><i>37</i>      setError(parsed.error.issues[0].message);</span>
+<span class="line"><i>38</i>      return;</span>
+<span class="line"><i>39</i>    }</span>
+<span class="line"><i>40</i>    setBusy(true);</span>
+<span class="line"><i>41</i>    try {</span>
+<span class="line"><i>42</i>      const { data, error } = await supabase</span>
+<span class="line"><i>43</i>        .from(&quot;profiles&quot;)</span>
+<span class="line"><i>44</i>        .update({ name: parsed.data.name, phone: parsed.data.phone || null })</span>
+<span class="line"><i>45</i>        .eq(&quot;id&quot;, profile.id)</span>
+<span class="line"><i>46</i>        .select(&quot;id,name,phone&quot;)</span>
+<span class="line"><i>47</i>        .single();</span>
+<span class="line"><i>48</i>      if (error) throw error;</span>
+<span class="line"><i>49</i>      client.setQueryData([&quot;patient-profile&quot;, profile.id], data);</span>
+<span class="line"><i>50</i>      await refreshUser();</span>
+<span class="line"><i>51</i>      setMessage(&quot;Tu perfil se actualizó correctamente.&quot;);</span>
+<span class="line"><i>52</i>    } catch {</span>
+<span class="line"><i>53</i>      setError(&quot;No se pudieron guardar los cambios. Inténtalo nuevamente.&quot;);</span>
+<span class="line"><i>54</i>    } finally {</span>
+<span class="line"><i>55</i>      setBusy(false);</span>
+<span class="line"><i>56</i>    }</span>
+<span class="line"><i>57</i>  }</span>
+<span class="line"><i>58</i>  return (</span>
+<span class="line"><i>59</i>    &lt;form onSubmit={save} className=&quot;space-y-5&quot;&gt;</span>
+<span class="line"><i>60</i>      &lt;fieldset disabled={busy} className=&quot;space-y-5&quot;&gt;</span>
+<span class="line"><i>61</i>        &lt;div className=&quot;field&quot;&gt;</span>
+<span class="line"><i>62</i>          &lt;Label htmlFor=&quot;patient-name&quot;&gt;Nombre completo&lt;/Label&gt;</span>
+<span class="line"><i>63</i>          &lt;Input</span>
+<span class="line"><i>64</i>            id=&quot;patient-name&quot;</span>
+<span class="line"><i>65</i>            required</span>
+<span class="line"><i>66</i>            minLength={2}</span>
+<span class="line"><i>67</i>            maxLength={100}</span>
+<span class="line"><i>68</i>            autoComplete=&quot;name&quot;</span>
+<span class="line"><i>69</i>            value={name}</span>
+<span class="line"><i>70</i>            onChange={(e) =&gt; setName(e.target.value)}</span>
+<span class="line"><i>71</i>          /&gt;</span>
+<span class="line"><i>72</i>        &lt;/div&gt;</span>
+<span class="line"><i>73</i>        &lt;div className=&quot;field&quot;&gt;</span>
+<span class="line"><i>74</i>          &lt;Label htmlFor=&quot;patient-phone&quot;&gt;Teléfono&lt;/Label&gt;</span>
+<span class="line"><i>75</i>          &lt;Input</span>
+<span class="line"><i>76</i>            id=&quot;patient-phone&quot;</span>
+<span class="line"><i>77</i>            type=&quot;tel&quot;</span>
+<span class="line"><i>78</i>            maxLength={25}</span>
+<span class="line"><i>79</i>            autoComplete=&quot;tel&quot;</span>
+<span class="line"><i>80</i>            value={phone}</span>
+<span class="line"><i>81</i>            onChange={(e) =&gt; setPhone(e.target.value)}</span>
+<span class="line"><i>82</i>          /&gt;</span>
+<span class="line"><i>83</i>        &lt;/div&gt;</span>
+<span class="line"><i>84</i>        &lt;div className=&quot;flex flex-wrap gap-3&quot;&gt;</span>
+<span class="line"><i>85</i>          &lt;Button type=&quot;submit&quot;&gt;</span>
+<span class="line"><i>86</i>            {busy ? &quot;Guardando...&quot; : &quot;Guardar cambios&quot;}</span>
+<span class="line"><i>87</i>          &lt;/Button&gt;</span>
+<span class="line"><i>88</i>          &lt;Button</span>
+<span class="line"><i>89</i>            variant=&quot;outline&quot;</span>
+<span class="line"><i>90</i>            type=&quot;button&quot;</span>
+<span class="line"><i>91</i>            onClick={() =&gt; {</span>
+<span class="line"><i>92</i>              setName(profile.name);</span>
+<span class="line"><i>93</i>              setPhone(profile.phone ?? &quot;&quot;);</span>
+<span class="line"><i>94</i>              setError(&quot;&quot;);</span>
+<span class="line"><i>95</i>              setMessage(&quot;&quot;);</span>
+<span class="line"><i>96</i>            }}</span>
+<span class="line"><i>97</i>          &gt;</span>
+<span class="line"><i>98</i>            Descartar cambios</span>
+<span class="line"><i>99</i>          &lt;/Button&gt;</span>
+<span class="line"><i>100</i>        &lt;/div&gt;</span>
+<span class="line"><i>101</i>      &lt;/fieldset&gt;</span>
+<span class="line"><i>102</i>      {error &amp;&amp; (</span>
+<span class="line"><i>103</i>        &lt;p role=&quot;alert&quot; className=&quot;notice error&quot;&gt;</span>
+<span class="line"><i>104</i>          {error}</span>
+<span class="line"><i>105</i>        &lt;/p&gt;</span>
+<span class="line"><i>106</i>      )}</span>
+<span class="line"><i>107</i>      {message &amp;&amp; (</span>
+<span class="line"><i>108</i>        &lt;p role=&quot;status&quot; className=&quot;notice&quot;&gt;</span>
+<span class="line"><i>109</i>          {message}</span>
+<span class="line"><i>110</i>        &lt;/p&gt;</span>
+<span class="line"><i>111</i>      )}</span>
+<span class="line"><i>112</i>    &lt;/form&gt;</span>
+<span class="line"><i>113</i>  );</span>
+<span class="line"><i>114</i>}</span>
+<span class="line"><i>115</i>function EmailForm() {</span>
+<span class="line"><i>116</i>  const { user } = useAuth();</span>
+<span class="line"><i>117</i>  const [email, setEmail] = useState(user?.email ?? &quot;&quot;);</span>
+<span class="line"><i>118</i>  const [busy, setBusy] = useState(false);</span>
+<span class="line"><i>119</i>  const [message, setMessage] = useState(&quot;&quot;);</span>
+<span class="line"><i>120</i>  const [error, setError] = useState(&quot;&quot;);</span>
+<span class="line"><i>121</i>  async function submit(e: FormEvent) {</span>
+<span class="line"><i>122</i>    e.preventDefault();</span>
+<span class="line"><i>123</i>    setBusy(true);</span>
+<span class="line"><i>124</i>    setError(&quot;&quot;);</span>
+<span class="line"><i>125</i>    setMessage(&quot;&quot;);</span>
+<span class="line"><i>126</i>    try {</span>
+<span class="line"><i>127</i>      const { error } = await supabase.auth.updateUser(</span>
+<span class="line"><i>128</i>        { email: email.trim() },</span>
+<span class="line"><i>129</i>        { emailRedirectTo: window.location.origin + &quot;/perfil&quot; },</span>
+<span class="line"><i>130</i>      );</span>
+<span class="line"><i>131</i>      if (error) throw error;</span>
+<span class="line"><i>132</i>      setMessage(</span>
+<span class="line"><i>133</i>        &quot;Solicitud enviada. Confirma el cambio en los correos que recibirás. Tu dirección actual seguirá activa hasta completar la confirmación.&quot;,</span>
+<span class="line"><i>134</i>      );</span>
+<span class="line"><i>135</i>    } catch {</span>
+<span class="line"><i>136</i>      setError(</span>
+<span class="line"><i>137</i>        &quot;No se pudo solicitar el cambio de correo. Inténtalo nuevamente.&quot;,</span>
+<span class="line"><i>138</i>      );</span>
+<span class="line"><i>139</i>    } finally {</span>
+<span class="line"><i>140</i>      setBusy(false);</span>
+<span class="line"><i>141</i>    }</span>
+<span class="line"><i>142</i>  }</span>
+<span class="line"><i>143</i>  return (</span>
+<span class="line"><i>144</i>    &lt;form onSubmit={submit} className=&quot;space-y-4&quot;&gt;</span>
+<span class="line"><i>145</i>      &lt;div className=&quot;field&quot;&gt;</span>
+<span class="line"><i>146</i>        &lt;Label htmlFor=&quot;patient-email&quot;&gt;Correo electrónico&lt;/Label&gt;</span>
+<span class="line"><i>147</i>        &lt;Input</span>
+<span class="line"><i>148</i>          id=&quot;patient-email&quot;</span>
+<span class="line"><i>149</i>          type=&quot;email&quot;</span>
+<span class="line"><i>150</i>          required</span>
+<span class="line"><i>151</i>          value={email}</span>
+<span class="line"><i>152</i>          onChange={(e) =&gt; setEmail(e.target.value)}</span>
+<span class="line"><i>153</i>        /&gt;</span>
+<span class="line"><i>154</i>      &lt;/div&gt;</span>
+<span class="line"><i>155</i>      &lt;p className=&quot;text-sm text-slate-500&quot;&gt;</span>
+<span class="line"><i>156</i>        El cambio de correo necesita confirmación para proteger tu cuenta.</span>
+<span class="line"><i>157</i>      &lt;/p&gt;</span>
+<span class="line"><i>158</i>      &lt;Button</span>
+<span class="line"><i>159</i>        type=&quot;submit&quot;</span>
+<span class="line"><i>160</i>        variant=&quot;outline&quot;</span>
+<span class="line"><i>161</i>        disabled={busy || email.trim() === user?.email}</span>
+<span class="line"><i>162</i>      &gt;</span>
+<span class="line"><i>163</i>        {busy ? &quot;Enviando...&quot; : &quot;Solicitar cambio de correo&quot;}</span>
+<span class="line"><i>164</i>      &lt;/Button&gt;</span>
+<span class="line"><i>165</i>      {message &amp;&amp; (</span>
+<span class="line"><i>166</i>        &lt;p role=&quot;status&quot; className=&quot;notice&quot;&gt;</span>
+<span class="line"><i>167</i>          {message}</span>
+<span class="line"><i>168</i>        &lt;/p&gt;</span>
+<span class="line"><i>169</i>      )}</span>
+<span class="line"><i>170</i>      {error &amp;&amp; (</span>
+<span class="line"><i>171</i>        &lt;p role=&quot;alert&quot; className=&quot;notice error&quot;&gt;</span>
+<span class="line"><i>172</i>          {error}</span>
+<span class="line"><i>173</i>        &lt;/p&gt;</span>
+<span class="line"><i>174</i>      )}</span>
+<span class="line"><i>175</i>    &lt;/form&gt;</span>
+<span class="line"><i>176</i>  );</span>
+<span class="line"><i>177</i>}</span>
+<span class="line"><i>178</i>export default function PatientProfile() {</span>
+<span class="line"><i>179</i>  const { user } = useAuth();</span>
+<span class="line"><i>180</i>  const profile = useQuery({</span>
+<span class="line"><i>181</i>    queryKey: [&quot;patient-profile&quot;, user?.id],</span>
+<span class="line"><i>182</i>    enabled: !!user,</span>
+<span class="line"><i>183</i>    queryFn: async () =&gt; {</span>
+<span class="line"><i>184</i>      const { data, error } = await supabase</span>
+<span class="line"><i>185</i>        .from(&quot;profiles&quot;)</span>
+<span class="line"><i>186</i>        .select(&quot;id,name,phone&quot;)</span>
+<span class="line"><i>187</i>        .eq(&quot;id&quot;, user!.id)</span>
+<span class="line"><i>188</i>        .single();</span>
+<span class="line"><i>189</i>      if (error) throw error;</span>
+<span class="line"><i>190</i>      return data;</span>
+<span class="line"><i>191</i>    },</span>
+<span class="line"><i>192</i>  });</span>
+<span class="line"><i>193</i>  if (!user) return null;</span>
+<span class="line"><i>194</i>  return (</span>
+<span class="line"><i>195</i>    &lt;div className=&quot;space-y-7&quot;&gt;</span>
+<span class="line"><i>196</i>      &lt;div className=&quot;page-heading&quot;&gt;</span>
+<span class="line"><i>197</i>        &lt;span className=&quot;eyebrow&quot;&gt;CONOCERTE ES CUIDARTE MEJOR&lt;/span&gt;</span>
+<span class="line"><i>198</i>        &lt;h1&gt;Mi perfil e historial&lt;/h1&gt;</span>
+<span class="line"><i>199</i>        &lt;p&gt;Tus datos al día, tu atención en un solo lugar.&lt;/p&gt;</span>
+<span class="line"><i>200</i>      &lt;/div&gt;</span>
+<span class="line"><i>201</i>      &lt;div className=&quot;profile-grid&quot;&gt;</span>
+<span class="line"><i>202</i>        &lt;aside className=&quot;surface profile-summary&quot;&gt;</span>
+<span class="line"><i>203</i>          &lt;div className=&quot;profile-avatar&quot;&gt;{user.name.slice(0, 1)}&lt;/div&gt;</span>
+<span class="line"><i>204</i>          &lt;h2&gt;{user.name}&lt;/h2&gt;</span>
+<span class="line"><i>205</i>          &lt;span className=&quot;role-badge&quot;&gt;Paciente&lt;/span&gt;</span>
+<span class="line"><i>206</i>          &lt;p className=&quot;mt-4 text-sm break-all text-slate-500&quot;&gt;{user.email}&lt;/p&gt;</span>
+<span class="line"><i>207</i>          &lt;div className=&quot;profile-secure&quot;&gt;</span>
+<span class="line"><i>208</i>            &lt;ShieldCheck size={18} /&gt;</span>
+<span class="line"><i>209</i>            Cuenta protegida con Supabase Auth</span>
+<span class="line"><i>210</i>          &lt;/div&gt;</span>
+<span class="line"><i>211</i>        &lt;/aside&gt;</span>
+<span class="line"><i>212</i>        &lt;div className=&quot;space-y-6&quot;&gt;</span>
+<span class="line"><i>213</i>          &lt;section className=&quot;surface&quot;&gt;</span>
+<span class="line"><i>214</i>            &lt;h2 className=&quot;card-heading&quot;&gt;</span>
+<span class="line"><i>215</i>              &lt;UserRound size={20} /&gt;</span>
+<span class="line"><i>216</i>              Datos personales</span>
+<span class="line"><i>217</i>            &lt;/h2&gt;</span>
+<span class="line"><i>218</i>            &lt;p className=&quot;muted mb-6&quot;&gt;Así podremos comunicarnos contigo.&lt;/p&gt;</span>
+<span class="line"><i>219</i>            {profile.isPending ? (</span>
+<span class="line"><i>220</i>              &lt;p role=&quot;status&quot;&gt;Cargando perfil...&lt;/p&gt;</span>
+<span class="line"><i>221</i>            ) : profile.isError ? (</span>
+<span class="line"><i>222</i>              &lt;p role=&quot;alert&quot;&gt;</span>
+<span class="line"><i>223</i>                No se pudo cargar el perfil.{&quot; &quot;}</span>
+<span class="line"><i>224</i>                &lt;button className=&quot;underline&quot; onClick={() =&gt; profile.refetch()}&gt;</span>
+<span class="line"><i>225</i>                  Reintentar</span>
+<span class="line"><i>226</i>                &lt;/button&gt;</span>
+<span class="line"><i>227</i>              &lt;/p&gt;</span>
+<span class="line"><i>228</i>            ) : (</span>
+<span class="line"><i>229</i>              &lt;DetailsForm profile={profile.data} /&gt;</span>
+<span class="line"><i>230</i>            )}</span>
+<span class="line"><i>231</i>          &lt;/section&gt;</span>
+<span class="line"><i>232</i>          &lt;section className=&quot;surface&quot;&gt;</span>
+<span class="line"><i>233</i>            &lt;h2 className=&quot;card-heading&quot;&gt;</span>
+<span class="line"><i>234</i>              &lt;Mail size={20} /&gt;</span>
+<span class="line"><i>235</i>              Correo de acceso</span>
+<span class="line"><i>236</i>            &lt;/h2&gt;</span>
+<span class="line"><i>237</i>            &lt;EmailForm /&gt;</span>
+<span class="line"><i>238</i>          &lt;/section&gt;</span>
+<span class="line"><i>239</i>        &lt;/div&gt;</span>
+<span class="line"><i>240</i>      &lt;/div&gt;</span>
+<span class="line"><i>241</i>      &lt;PatientHistory currentUser={user} /&gt;</span>
+<span class="line"><i>242</i>    &lt;/div&gt;</span>
+<span class="line"><i>243</i>  );</span>
+<span class="line"><i>244</i>}</span></code></pre></section><section><h3>Después · rama de Ángel</h3><pre><code><span class="line"><i>1</i>import PageHeading from &quot;@/components/PageHeading&quot;;</span>
+<span class="line"><i>2</i>import { useState, type FormEvent } from &quot;react&quot;;</span>
+<span class="line"><i>3</i>import { useQuery, useQueryClient } from &quot;@tanstack/react-query&quot;;</span>
+<span class="line"><i>4</i>import { useAuth } from &quot;@/hooks/useAuth&quot;;</span>
+<span class="line"><i>5</i>import { supabase } from &quot;@/integrations/supabase/client&quot;;</span>
+<span class="line"><i>6</i>import PatientHistory from &quot;@/components/PatientHistory&quot;;</span>
+<span class="line"><i>7</i>import { Button } from &quot;@/components/ui/button&quot;;</span>
+<span class="line"><i>8</i>import { Input } from &quot;@/components/ui/input&quot;;</span>
+<span class="line"><i>9</i>import { Label } from &quot;@/components/ui/label&quot;;</span>
+<span class="line"><i>10</i>import { UserRound, Mail, ShieldCheck } from &quot;lucide-react&quot;;</span>
+<span class="line"><i>11</i>import { z } from &quot;zod&quot;;</span>
+<span class="line"><i>12</i>type Profile = { id: string; name: string; phone: string | null };</span>
+<span class="line"><i>13</i>const schema = z.object({</span>
+<span class="line"><i>14</i>  name: z.string().trim().min(2, &quot;Escribe al menos 2 caracteres.&quot;).max(100),</span>
+<span class="line"><i>15</i>  phone: z</span>
+<span class="line"><i>16</i>    .string()</span>
+<span class="line"><i>17</i>    .trim()</span>
+<span class="line"><i>18</i>    .refine(</span>
+<span class="line"><i>19</i>      (v) =&gt;</span>
+<span class="line"><i>20</i>        !v || (/^[+\d ()-]{7,25}$/.test(v) &amp;&amp; v.replace(/\D/g, &quot;&quot;).length &gt;= 7),</span>
+<span class="line"><i>21</i>      &quot;Ingresa un teléfono válido.&quot;,</span>
+<span class="line"><i>22</i>    ),</span>
+<span class="line"><i>23</i>});</span>
+<span class="line"><i>24</i>function DetailsForm({ profile }: { profile: Profile }) {</span>
+<span class="line"><i>25</i>  const { refreshUser } = useAuth();</span>
+<span class="line"><i>26</i>  const client = useQueryClient();</span>
+<span class="line"><i>27</i>  const [name, setName] = useState(profile.name);</span>
+<span class="line"><i>28</i>  const [phone, setPhone] = useState(profile.phone ?? &quot;&quot;);</span>
+<span class="line"><i>29</i>  const [busy, setBusy] = useState(false);</span>
+<span class="line"><i>30</i>  const [error, setError] = useState(&quot;&quot;);</span>
+<span class="line"><i>31</i>  const [message, setMessage] = useState(&quot;&quot;);</span>
+<span class="line"><i>32</i>  async function save(e: FormEvent) {</span>
+<span class="line"><i>33</i>    e.preventDefault();</span>
+<span class="line"><i>34</i>    setError(&quot;&quot;);</span>
+<span class="line"><i>35</i>    setMessage(&quot;&quot;);</span>
+<span class="line"><i>36</i>    const parsed = schema.safeParse({ name, phone });</span>
+<span class="line"><i>37</i>    if (!parsed.success) {</span>
+<span class="line"><i>38</i>      setError(parsed.error.issues[0].message);</span>
+<span class="line"><i>39</i>      return;</span>
+<span class="line"><i>40</i>    }</span>
+<span class="line"><i>41</i>    setBusy(true);</span>
+<span class="line"><i>42</i>    try {</span>
+<span class="line"><i>43</i>      const { data, error } = await supabase</span>
+<span class="line"><i>44</i>        .from(&quot;profiles&quot;)</span>
+<span class="line"><i>45</i>        .update({ name: parsed.data.name, phone: parsed.data.phone || null })</span>
+<span class="line"><i>46</i>        .eq(&quot;id&quot;, profile.id)</span>
+<span class="line"><i>47</i>        .select(&quot;id,name,phone&quot;)</span>
+<span class="line"><i>48</i>        .single();</span>
+<span class="line"><i>49</i>      if (error) throw error;</span>
+<span class="line"><i>50</i>      client.setQueryData([&quot;patient-profile&quot;, profile.id], data);</span>
+<span class="line"><i>51</i>      await refreshUser();</span>
+<span class="line"><i>52</i>      setMessage(&quot;Tu perfil se actualizó correctamente.&quot;);</span>
+<span class="line"><i>53</i>    } catch {</span>
+<span class="line"><i>54</i>      setError(&quot;No se pudieron guardar los cambios. Inténtalo nuevamente.&quot;);</span>
+<span class="line"><i>55</i>    } finally {</span>
+<span class="line"><i>56</i>      setBusy(false);</span>
+<span class="line"><i>57</i>    }</span>
+<span class="line"><i>58</i>  }</span>
+<span class="line"><i>59</i>  return (</span>
+<span class="line"><i>60</i>    &lt;form onSubmit={save} className=&quot;space-y-5&quot;&gt;</span>
+<span class="line"><i>61</i>      &lt;fieldset disabled={busy} className=&quot;space-y-5&quot;&gt;</span>
+<span class="line"><i>62</i>        &lt;div className=&quot;field&quot;&gt;</span>
+<span class="line"><i>63</i>          &lt;Label htmlFor=&quot;patient-name&quot;&gt;Nombre completo&lt;/Label&gt;</span>
+<span class="line"><i>64</i>          &lt;Input</span>
+<span class="line"><i>65</i>            id=&quot;patient-name&quot;</span>
+<span class="line"><i>66</i>            required</span>
+<span class="line"><i>67</i>            minLength={2}</span>
+<span class="line"><i>68</i>            maxLength={100}</span>
+<span class="line"><i>69</i>            autoComplete=&quot;name&quot;</span>
+<span class="line"><i>70</i>            value={name}</span>
+<span class="line"><i>71</i>            onChange={(e) =&gt; setName(e.target.value)}</span>
+<span class="line"><i>72</i>          /&gt;</span>
+<span class="line"><i>73</i>        &lt;/div&gt;</span>
+<span class="line"><i>74</i>        &lt;div className=&quot;field&quot;&gt;</span>
+<span class="line"><i>75</i>          &lt;Label htmlFor=&quot;patient-phone&quot;&gt;Teléfono&lt;/Label&gt;</span>
+<span class="line"><i>76</i>          &lt;Input</span>
+<span class="line"><i>77</i>            id=&quot;patient-phone&quot;</span>
+<span class="line"><i>78</i>            type=&quot;tel&quot;</span>
+<span class="line"><i>79</i>            maxLength={25}</span>
+<span class="line"><i>80</i>            autoComplete=&quot;tel&quot;</span>
+<span class="line"><i>81</i>            value={phone}</span>
+<span class="line"><i>82</i>            onChange={(e) =&gt; setPhone(e.target.value)}</span>
+<span class="line"><i>83</i>          /&gt;</span>
+<span class="line"><i>84</i>        &lt;/div&gt;</span>
+<span class="line"><i>85</i>        &lt;div className=&quot;flex flex-wrap gap-3&quot;&gt;</span>
+<span class="line"><i>86</i>          &lt;Button type=&quot;submit&quot;&gt;</span>
+<span class="line"><i>87</i>            {busy ? &quot;Guardando...&quot; : &quot;Guardar cambios&quot;}</span>
+<span class="line"><i>88</i>          &lt;/Button&gt;</span>
+<span class="line"><i>89</i>          &lt;Button</span>
+<span class="line"><i>90</i>            variant=&quot;outline&quot;</span>
+<span class="line"><i>91</i>            type=&quot;button&quot;</span>
+<span class="line"><i>92</i>            onClick={() =&gt; {</span>
+<span class="line"><i>93</i>              setName(profile.name);</span>
+<span class="line"><i>94</i>              setPhone(profile.phone ?? &quot;&quot;);</span>
+<span class="line"><i>95</i>              setError(&quot;&quot;);</span>
+<span class="line"><i>96</i>              setMessage(&quot;&quot;);</span>
+<span class="line"><i>97</i>            }}</span>
+<span class="line"><i>98</i>          &gt;</span>
+<span class="line"><i>99</i>            Descartar cambios</span>
+<span class="line"><i>100</i>          &lt;/Button&gt;</span>
+<span class="line"><i>101</i>        &lt;/div&gt;</span>
+<span class="line"><i>102</i>      &lt;/fieldset&gt;</span>
+<span class="line"><i>103</i>      {error &amp;&amp; (</span>
+<span class="line"><i>104</i>        &lt;p role=&quot;alert&quot; className=&quot;notice error&quot;&gt;</span>
+<span class="line"><i>105</i>          {error}</span>
+<span class="line"><i>106</i>        &lt;/p&gt;</span>
+<span class="line"><i>107</i>      )}</span>
+<span class="line"><i>108</i>      {message &amp;&amp; (</span>
+<span class="line"><i>109</i>        &lt;p role=&quot;status&quot; className=&quot;notice&quot;&gt;</span>
+<span class="line"><i>110</i>          {message}</span>
+<span class="line"><i>111</i>        &lt;/p&gt;</span>
+<span class="line"><i>112</i>      )}</span>
+<span class="line"><i>113</i>    &lt;/form&gt;</span>
+<span class="line"><i>114</i>  );</span>
+<span class="line"><i>115</i>}</span>
+<span class="line"><i>116</i>function EmailForm() {</span>
+<span class="line"><i>117</i>  const { user } = useAuth();</span>
+<span class="line"><i>118</i>  const [email, setEmail] = useState(user?.email ?? &quot;&quot;);</span>
+<span class="line"><i>119</i>  const [busy, setBusy] = useState(false);</span>
+<span class="line"><i>120</i>  const [message, setMessage] = useState(&quot;&quot;);</span>
+<span class="line"><i>121</i>  const [error, setError] = useState(&quot;&quot;);</span>
+<span class="line"><i>122</i>  async function submit(e: FormEvent) {</span>
+<span class="line"><i>123</i>    e.preventDefault();</span>
+<span class="line"><i>124</i>    setBusy(true);</span>
+<span class="line"><i>125</i>    setError(&quot;&quot;);</span>
+<span class="line"><i>126</i>    setMessage(&quot;&quot;);</span>
+<span class="line"><i>127</i>    try {</span>
+<span class="line"><i>128</i>      const { error } = await supabase.auth.updateUser(</span>
+<span class="line"><i>129</i>        { email: email.trim() },</span>
+<span class="line"><i>130</i>        { emailRedirectTo: window.location.origin + &quot;/perfil&quot; },</span>
+<span class="line"><i>131</i>      );</span>
+<span class="line"><i>132</i>      if (error) throw error;</span>
+<span class="line"><i>133</i>      setMessage(</span>
+<span class="line"><i>134</i>        &quot;Solicitud enviada. Confirma el cambio en los correos que recibirás. Tu dirección actual seguirá activa hasta completar la confirmación.&quot;,</span>
+<span class="line"><i>135</i>      );</span>
+<span class="line"><i>136</i>    } catch {</span>
+<span class="line"><i>137</i>      setError(</span>
+<span class="line"><i>138</i>        &quot;No se pudo solicitar el cambio de correo. Inténtalo nuevamente.&quot;,</span>
+<span class="line"><i>139</i>      );</span>
+<span class="line"><i>140</i>    } finally {</span>
+<span class="line"><i>141</i>      setBusy(false);</span>
+<span class="line"><i>142</i>    }</span>
+<span class="line"><i>143</i>  }</span>
+<span class="line"><i>144</i>  return (</span>
+<span class="line"><i>145</i>    &lt;form onSubmit={submit} className=&quot;space-y-4&quot;&gt;</span>
+<span class="line"><i>146</i>      &lt;div className=&quot;field&quot;&gt;</span>
+<span class="line"><i>147</i>        &lt;Label htmlFor=&quot;patient-email&quot;&gt;Correo electrónico&lt;/Label&gt;</span>
+<span class="line"><i>148</i>        &lt;Input</span>
+<span class="line"><i>149</i>          id=&quot;patient-email&quot;</span>
+<span class="line"><i>150</i>          type=&quot;email&quot;</span>
+<span class="line"><i>151</i>          required</span>
+<span class="line"><i>152</i>          value={email}</span>
+<span class="line"><i>153</i>          onChange={(e) =&gt; setEmail(e.target.value)}</span>
+<span class="line"><i>154</i>        /&gt;</span>
+<span class="line"><i>155</i>      &lt;/div&gt;</span>
+<span class="line"><i>156</i>      &lt;p className=&quot;text-sm text-slate-500&quot;&gt;</span>
+<span class="line"><i>157</i>        El cambio de correo necesita confirmación para proteger tu cuenta.</span>
+<span class="line"><i>158</i>      &lt;/p&gt;</span>
+<span class="line"><i>159</i>      &lt;Button</span>
+<span class="line"><i>160</i>        type=&quot;submit&quot;</span>
+<span class="line"><i>161</i>        variant=&quot;outline&quot;</span>
+<span class="line"><i>162</i>        disabled={busy || email.trim() === user?.email}</span>
+<span class="line"><i>163</i>      &gt;</span>
+<span class="line"><i>164</i>        {busy ? &quot;Enviando...&quot; : &quot;Solicitar cambio de correo&quot;}</span>
+<span class="line"><i>165</i>      &lt;/Button&gt;</span>
+<span class="line"><i>166</i>      {message &amp;&amp; (</span>
+<span class="line"><i>167</i>        &lt;p role=&quot;status&quot; className=&quot;notice&quot;&gt;</span>
+<span class="line"><i>168</i>          {message}</span>
+<span class="line"><i>169</i>        &lt;/p&gt;</span>
+<span class="line"><i>170</i>      )}</span>
+<span class="line"><i>171</i>      {error &amp;&amp; (</span>
+<span class="line"><i>172</i>        &lt;p role=&quot;alert&quot; className=&quot;notice error&quot;&gt;</span>
+<span class="line"><i>173</i>          {error}</span>
+<span class="line"><i>174</i>        &lt;/p&gt;</span>
+<span class="line"><i>175</i>      )}</span>
+<span class="line"><i>176</i>    &lt;/form&gt;</span>
+<span class="line"><i>177</i>  );</span>
+<span class="line"><i>178</i>}</span>
+<span class="line"><i>179</i>export default function PatientProfile() {</span>
+<span class="line"><i>180</i>  const { user } = useAuth();</span>
+<span class="line"><i>181</i>  const profile = useQuery({</span>
+<span class="line"><i>182</i>    queryKey: [&quot;patient-profile&quot;, user?.id],</span>
+<span class="line"><i>183</i>    enabled: !!user,</span>
+<span class="line"><i>184</i>    queryFn: async () =&gt; {</span>
+<span class="line"><i>185</i>      const { data, error } = await supabase</span>
+<span class="line"><i>186</i>        .from(&quot;profiles&quot;)</span>
+<span class="line"><i>187</i>        .select(&quot;id,name,phone&quot;)</span>
+<span class="line"><i>188</i>        .eq(&quot;id&quot;, user!.id)</span>
+<span class="line"><i>189</i>        .single();</span>
+<span class="line"><i>190</i>      if (error) throw error;</span>
+<span class="line"><i>191</i>      return data;</span>
+<span class="line"><i>192</i>    },</span>
+<span class="line"><i>193</i>  });</span>
+<span class="line"><i>194</i>  if (!user) return null;</span>
+<span class="line"><i>195</i>  return (</span>
+<span class="line"><i>196</i>    &lt;div className=&quot;space-y-7&quot;&gt;</span>
+<span class="line"><i>197</i>      &lt;PageHeading</span>
+<span class="line"><i>198</i>        eyebrow=&quot;CONOCERTE ES CUIDARTE MEJOR&quot;</span>
+<span class="line"><i>199</i>        title=&quot;Mi perfil e historial&quot;</span>
+<span class="line"><i>200</i>        description=&quot;Tus datos al día, tu atención en un solo lugar.&quot;</span>
+<span class="line"><i>201</i>      /&gt;</span>
+<span class="line"><i>202</i>      &lt;div className=&quot;profile-grid&quot;&gt;</span>
+<span class="line"><i>203</i>        &lt;aside className=&quot;surface profile-summary&quot;&gt;</span>
+<span class="line"><i>204</i>          &lt;div className=&quot;profile-avatar&quot;&gt;{user.name.slice(0, 1)}&lt;/div&gt;</span>
+<span class="line"><i>205</i>          &lt;h2&gt;{user.name}&lt;/h2&gt;</span>
+<span class="line"><i>206</i>          &lt;span className=&quot;role-badge&quot;&gt;Paciente&lt;/span&gt;</span>
+<span class="line"><i>207</i>          &lt;p className=&quot;mt-4 text-sm break-all text-slate-500&quot;&gt;{user.email}&lt;/p&gt;</span>
+<span class="line"><i>208</i>          &lt;div className=&quot;profile-secure&quot;&gt;</span>
+<span class="line"><i>209</i>            &lt;ShieldCheck size={18} /&gt;</span>
+<span class="line"><i>210</i>            Cuenta protegida con Supabase Auth</span>
+<span class="line"><i>211</i>          &lt;/div&gt;</span>
+<span class="line"><i>212</i>        &lt;/aside&gt;</span>
+<span class="line"><i>213</i>        &lt;div className=&quot;space-y-6&quot;&gt;</span>
+<span class="line"><i>214</i>          &lt;section className=&quot;surface&quot;&gt;</span>
+<span class="line"><i>215</i>            &lt;h2 className=&quot;card-heading&quot;&gt;</span>
+<span class="line"><i>216</i>              &lt;UserRound size={20} /&gt;</span>
+<span class="line"><i>217</i>              Datos personales</span>
+<span class="line"><i>218</i>            &lt;/h2&gt;</span>
+<span class="line"><i>219</i>            &lt;p className=&quot;muted mb-6&quot;&gt;Así podremos comunicarnos contigo.&lt;/p&gt;</span>
+<span class="line"><i>220</i>            {profile.isPending ? (</span>
+<span class="line"><i>221</i>              &lt;p role=&quot;status&quot;&gt;Cargando perfil...&lt;/p&gt;</span>
+<span class="line"><i>222</i>            ) : profile.isError ? (</span>
+<span class="line"><i>223</i>              &lt;p role=&quot;alert&quot;&gt;</span>
+<span class="line"><i>224</i>                No se pudo cargar el perfil.{&quot; &quot;}</span>
+<span class="line"><i>225</i>                &lt;button className=&quot;underline&quot; onClick={() =&gt; profile.refetch()}&gt;</span>
+<span class="line"><i>226</i>                  Reintentar</span>
+<span class="line"><i>227</i>                &lt;/button&gt;</span>
+<span class="line"><i>228</i>              &lt;/p&gt;</span>
+<span class="line"><i>229</i>            ) : (</span>
+<span class="line"><i>230</i>              &lt;DetailsForm profile={profile.data} /&gt;</span>
+<span class="line"><i>231</i>            )}</span>
+<span class="line"><i>232</i>          &lt;/section&gt;</span>
+<span class="line"><i>233</i>          &lt;section className=&quot;surface&quot;&gt;</span>
+<span class="line"><i>234</i>            &lt;h2 className=&quot;card-heading&quot;&gt;</span>
+<span class="line"><i>235</i>              &lt;Mail size={20} /&gt;</span>
+<span class="line"><i>236</i>              Correo de acceso</span>
+<span class="line"><i>237</i>            &lt;/h2&gt;</span>
+<span class="line"><i>238</i>            &lt;EmailForm /&gt;</span>
+<span class="line"><i>239</i>          &lt;/section&gt;</span>
+<span class="line"><i>240</i>        &lt;/div&gt;</span>
+<span class="line"><i>241</i>      &lt;/div&gt;</span>
+<span class="line"><i>242</i>      &lt;PatientHistory currentUser={user} /&gt;</span>
+<span class="line"><i>243</i>    &lt;/div&gt;</span>
+<span class="line"><i>244</i>  );</span>
+<span class="line"><i>245</i>}</span></code></pre></section></div></details><details><summary>src/components/AppointmentEmailTemplate.tsx</summary><div class="comparison"><section><h3>Antes · 8f76545</h3><pre><code><span class="line"><i>1</i>import { useAppointments } from &quot;@/hooks/useSupabaseData&quot;;</span>
+<span class="line"><i>2</i>export default function AppointmentEmailTemplate({</span>
+<span class="line"><i>3</i>  appointment,</span>
+<span class="line"><i>4</i>}: {</span>
+<span class="line"><i>5</i>  appointment: NonNullable&lt;ReturnType&lt;typeof useAppointments&gt;[&quot;data&quot;]&gt;[number];</span>
+<span class="line"><i>6</i>}) {</span>
+<span class="line"><i>7</i>  return (</span>
+<span class="line"><i>8</i>    &lt;div className=&quot;notice mt-4&quot;&gt;</span>
+<span class="line"><i>9</i>      &lt;strong&gt;MediCitas · Resumen de tu cita&lt;/strong&gt;</span>
+<span class="line"><i>10</i>      &lt;p&gt;</span>
+<span class="line"><i>11</i>        Hola, {appointment.patient_name}. Tu consulta de{&quot; &quot;}</span>
+<span class="line"><i>12</i>        {appointment.specialty?.name} con {appointment.doctor?.name} está</span>
+<span class="line"><i>13</i>        registrada para el {appointment.appointment_date} a las{&quot; &quot;}</span>
+<span class="line"><i>14</i>        {appointment.appointment_time.slice(0, 5)}, en{&quot; &quot;}</span>
+<span class="line"><i>15</i>        {appointment.hospital?.name}.</span>
+<span class="line"><i>16</i>      &lt;/p&gt;</span>
+<span class="line"><i>17</i>      &lt;p className=&quot;text-xs mt-2&quot;&gt;</span>
+<span class="line"><i>18</i>        Vista previa de la plantilla de confirmación. No representa un correo</span>
+<span class="line"><i>19</i>        enviado.</span>
+<span class="line"><i>20</i>      &lt;/p&gt;</span>
+<span class="line"><i>21</i>    &lt;/div&gt;</span>
+<span class="line"><i>22</i>  );</span>
+<span class="line"><i>23</i>}</span></code></pre></section><section><h3>Después · rama de Ángel</h3><pre><code><span class="line"><i>1</i>import type { AppointmentListItem } from &quot;@/lib/appointment-presentation&quot;;</span>
+<span class="line"><i>2</i>export default function AppointmentEmailTemplate({</span>
+<span class="line"><i>3</i>  appointment,</span>
+<span class="line"><i>4</i>}: {</span>
+<span class="line"><i>5</i>  appointment: AppointmentListItem;</span>
+<span class="line"><i>6</i>}) {</span>
+<span class="line"><i>7</i>  return (</span>
+<span class="line"><i>8</i>    &lt;div className=&quot;notice mt-4&quot;&gt;</span>
+<span class="line"><i>9</i>      &lt;strong&gt;MediCitas · Resumen de tu cita&lt;/strong&gt;</span>
+<span class="line"><i>10</i>      &lt;p&gt;</span>
+<span class="line"><i>11</i>        Hola, {appointment.patient_name}. Tu consulta de{&quot; &quot;}</span>
+<span class="line"><i>12</i>        {appointment.specialty?.name} con {appointment.doctor?.name} está</span>
+<span class="line"><i>13</i>        registrada para el {appointment.appointment_date} a las{&quot; &quot;}</span>
+<span class="line"><i>14</i>        {appointment.appointment_time.slice(0, 5)}, en{&quot; &quot;}</span>
+<span class="line"><i>15</i>        {appointment.hospital?.name}.</span>
+<span class="line"><i>16</i>      &lt;/p&gt;</span>
+<span class="line"><i>17</i>      &lt;p className=&quot;text-xs mt-2&quot;&gt;</span>
+<span class="line"><i>18</i>        Vista previa de la plantilla de confirmación. No representa un correo</span>
+<span class="line"><i>19</i>        enviado.</span>
+<span class="line"><i>20</i>      &lt;/p&gt;</span>
+<span class="line"><i>21</i>    &lt;/div&gt;</span>
+<span class="line"><i>22</i>  );</span>
+<span class="line"><i>23</i>}</span></code></pre></section></div></details><details><summary>src/components/AppointmentCard.tsx</summary><div class="comparison"><section><h3>Antes · 8f76545</h3><pre><code><span class="line"><i>1</i>// Componente nuevo: no existía en la versión original.</span></code></pre></section><section><h3>Después · rama de Ángel</h3><pre><code><span class="line"><i>1</i>import type { User } from &quot;@/hooks/useAuth&quot;;</span>
+<span class="line"><i>2</i>import { Button } from &quot;@/components/ui/button&quot;;</span>
+<span class="line"><i>3</i>import { MapPin, Clock3, Check, X, FileText } from &quot;lucide-react&quot;;</span>
+<span class="line"><i>4</i>import AppointmentEmailTemplate from &quot;@/components/AppointmentEmailTemplate&quot;;</span>
+<span class="line"><i>5</i>import AppointmentStatusBadge from &quot;@/components/AppointmentStatusBadge&quot;;</span>
+<span class="line"><i>6</i>import {</span>
+<span class="line"><i>7</i>  isActiveAppointment,</span>
+<span class="line"><i>8</i>  type AppointmentListItem,</span>
+<span class="line"><i>9</i>  type AppointmentStatus,</span>
+<span class="line"><i>10</i>} from &quot;@/lib/appointment-presentation&quot;;</span>
+<span class="line"><i>11</i></span>
+<span class="line"><i>12</i>interface AppointmentCardProps {</span>
+<span class="line"><i>13</i>  appointment: AppointmentListItem;</span>
+<span class="line"><i>14</i>  userType: User[&quot;userType&quot;];</span>
+<span class="line"><i>15</i>  isUpdating: boolean;</span>
+<span class="line"><i>16</i>  isPreviewOpen: boolean;</span>
+<span class="line"><i>17</i>  onStatusChange: (</span>
+<span class="line"><i>18</i>    id: string,</span>
+<span class="line"><i>19</i>    status: Exclude&lt;AppointmentStatus, &quot;pending&quot;&gt;,</span>
+<span class="line"><i>20</i>  ) =&gt; void;</span>
+<span class="line"><i>21</i>  onTogglePreview: () =&gt; void;</span>
+<span class="line"><i>22</i>}</span>
+<span class="line"><i>23</i></span>
+<span class="line"><i>24</i>export default function AppointmentCard({</span>
+<span class="line"><i>25</i>  appointment,</span>
+<span class="line"><i>26</i>  userType,</span>
+<span class="line"><i>27</i>  isUpdating,</span>
+<span class="line"><i>28</i>  isPreviewOpen,</span>
+<span class="line"><i>29</i>  onStatusChange,</span>
+<span class="line"><i>30</i>  onTogglePreview,</span>
+<span class="line"><i>31</i>}: AppointmentCardProps) {</span>
+<span class="line"><i>32</i>  return (</span>
+<span class="line"><i>33</i>    &lt;article className=&quot;appointment-row&quot;&gt;</span>
+<span class="line"><i>34</i>      &lt;div className=&quot;appointment-date&quot;&gt;</span>
+<span class="line"><i>35</i>        &lt;strong&gt;{appointment.appointment_date.slice(-2)}&lt;/strong&gt;</span>
+<span class="line"><i>36</i>        &lt;span&gt;</span>
+<span class="line"><i>37</i>          {new Date(</span>
+<span class="line"><i>38</i>            appointment.appointment_date + &quot;T12:00:00&quot;,</span>
+<span class="line"><i>39</i>          ).toLocaleDateString(&quot;es-PE&quot;, {</span>
+<span class="line"><i>40</i>            month: &quot;short&quot;,</span>
+<span class="line"><i>41</i>            year: &quot;numeric&quot;,</span>
+<span class="line"><i>42</i>          })}</span>
+<span class="line"><i>43</i>        &lt;/span&gt;</span>
+<span class="line"><i>44</i>      &lt;/div&gt;</span>
+<span class="line"><i>45</i>      &lt;div className=&quot;appointment-details&quot;&gt;</span>
+<span class="line"><i>46</i>        &lt;div className=&quot;flex flex-wrap gap-3 items-center&quot;&gt;</span>
+<span class="line"><i>47</i>          &lt;h3&gt;{appointment.specialty?.name ?? &quot;Consulta médica&quot;}&lt;/h3&gt;</span>
+<span class="line"><i>48</i>          &lt;AppointmentStatusBadge</span>
+<span class="line"><i>49</i>            status={appointment.status}</span>
+<span class="line"><i>50</i>            className={&quot;status-&quot; + appointment.status}</span>
+<span class="line"><i>51</i>          /&gt;</span>
+<span class="line"><i>52</i>        &lt;/div&gt;</span>
+<span class="line"><i>53</i>        &lt;p&gt;</span>
+<span class="line"><i>54</i>          {appointment.doctor?.name}</span>
+<span class="line"><i>55</i>          {userType === &quot;doctor&quot; ? &quot; · &quot; + appointment.patient_name : &quot;&quot;}</span>
+<span class="line"><i>56</i>        &lt;/p&gt;</span>
+<span class="line"><i>57</i>        &lt;div className=&quot;appointment-meta&quot;&gt;</span>
+<span class="line"><i>58</i>          &lt;span&gt;</span>
+<span class="line"><i>59</i>            &lt;Clock3 size={14} /&gt;</span>
+<span class="line"><i>60</i>            {appointment.appointment_time.slice(0, 5)}</span>
+<span class="line"><i>61</i>          &lt;/span&gt;</span>
+<span class="line"><i>62</i>          &lt;span&gt;</span>
+<span class="line"><i>63</i>            &lt;MapPin size={14} /&gt;</span>
+<span class="line"><i>64</i>            {appointment.hospital?.name}</span>
+<span class="line"><i>65</i>          &lt;/span&gt;</span>
+<span class="line"><i>66</i>        &lt;/div&gt;</span>
+<span class="line"><i>67</i>        &lt;p className=&quot;text-sm mt-2 text-slate-500&quot;&gt;{appointment.reason}&lt;/p&gt;</span>
+<span class="line"><i>68</i>      &lt;/div&gt;</span>
+<span class="line"><i>69</i>      &lt;div className=&quot;appointment-actions&quot;&gt;</span>
+<span class="line"><i>70</i>        {appointment.status === &quot;pending&quot; &amp;&amp; userType === &quot;doctor&quot; &amp;&amp; (</span>
+<span class="line"><i>71</i>            &lt;Button</span>
+<span class="line"><i>72</i>              size=&quot;sm&quot;</span>
+<span class="line"><i>73</i>              disabled={isUpdating}</span>
+<span class="line"><i>74</i>              onClick={() =&gt; onStatusChange(appointment.id, &quot;confirmed&quot;)}</span>
+<span class="line"><i>75</i>            &gt;</span>
+<span class="line"><i>76</i>              &lt;Check size={15} /&gt;</span>
+<span class="line"><i>77</i>              Confirmar</span>
+<span class="line"><i>78</i>            &lt;/Button&gt;</span>
+<span class="line"><i>79</i>        )}</span>
+<span class="line"><i>80</i>        {appointment.status === &quot;confirmed&quot; &amp;&amp; userType === &quot;doctor&quot; &amp;&amp; (</span>
+<span class="line"><i>81</i>            &lt;Button</span>
+<span class="line"><i>82</i>              size=&quot;sm&quot;</span>
+<span class="line"><i>83</i>              disabled={isUpdating}</span>
+<span class="line"><i>84</i>              onClick={() =&gt; onStatusChange(appointment.id, &quot;completed&quot;)}</span>
+<span class="line"><i>85</i>            &gt;</span>
+<span class="line"><i>86</i>              Completar</span>
+<span class="line"><i>87</i>            &lt;/Button&gt;</span>
+<span class="line"><i>88</i>        )}</span>
+<span class="line"><i>89</i>        {isActiveAppointment(appointment.status) &amp;&amp; (</span>
+<span class="line"><i>90</i>          &lt;Button</span>
+<span class="line"><i>91</i>            size=&quot;sm&quot;</span>
+<span class="line"><i>92</i>            variant=&quot;outline&quot;</span>
+<span class="line"><i>93</i>            disabled={isUpdating}</span>
+<span class="line"><i>94</i>            onClick={() =&gt; onStatusChange(appointment.id, &quot;cancelled&quot;)}</span>
+<span class="line"><i>95</i>          &gt;</span>
+<span class="line"><i>96</i>            &lt;X size={14} /&gt;</span>
+<span class="line"><i>97</i>            Cancelar</span>
+<span class="line"><i>98</i>          &lt;/Button&gt;</span>
+<span class="line"><i>99</i>        )}</span>
+<span class="line"><i>100</i>        &lt;Button variant=&quot;ghost&quot; size=&quot;sm&quot; onClick={onTogglePreview}&gt;</span>
+<span class="line"><i>101</i>          &lt;FileText size={15} /&gt;</span>
+<span class="line"><i>102</i>          Comprobante</span>
+<span class="line"><i>103</i>        &lt;/Button&gt;</span>
+<span class="line"><i>104</i>      &lt;/div&gt;</span>
+<span class="line"><i>105</i>      {isPreviewOpen &amp;&amp; (</span>
+<span class="line"><i>106</i>        &lt;div className=&quot;w-full basis-full&quot;&gt;</span>
+<span class="line"><i>107</i>          &lt;AppointmentEmailTemplate appointment={appointment} /&gt;</span>
+<span class="line"><i>108</i>        &lt;/div&gt;</span>
+<span class="line"><i>109</i>      )}</span>
+<span class="line"><i>110</i>    &lt;/article&gt;</span>
+<span class="line"><i>111</i>  );</span>
+<span class="line"><i>112</i>}</span></code></pre></section></div></details><details><summary>src/components/AppointmentStatusBadge.tsx</summary><div class="comparison"><section><h3>Antes · 8f76545</h3><pre><code><span class="line"><i>1</i>// Componente nuevo: no existía en la versión original.</span></code></pre></section><section><h3>Después · rama de Ángel</h3><pre><code><span class="line"><i>1</i>import { Badge, type BadgeProps } from &quot;@/components/ui/badge&quot;;</span>
+<span class="line"><i>2</i>import {</span>
+<span class="line"><i>3</i>  appointmentStatusLabels,</span>
+<span class="line"><i>4</i>  type AppointmentStatus,</span>
+<span class="line"><i>5</i>} from &quot;@/lib/appointment-presentation&quot;;</span>
+<span class="line"><i>6</i></span>
+<span class="line"><i>7</i>interface AppointmentStatusBadgeProps {</span>
+<span class="line"><i>8</i>  status: AppointmentStatus | null;</span>
+<span class="line"><i>9</i>  variant?: BadgeProps[&quot;variant&quot;];</span>
+<span class="line"><i>10</i>  className?: string;</span>
+<span class="line"><i>11</i>}</span>
+<span class="line"><i>12</i></span>
+<span class="line"><i>13</i>export default function AppointmentStatusBadge({</span>
+<span class="line"><i>14</i>  status,</span>
+<span class="line"><i>15</i>  variant = &quot;outline&quot;,</span>
+<span class="line"><i>16</i>  className,</span>
+<span class="line"><i>17</i>}: AppointmentStatusBadgeProps) {</span>
+<span class="line"><i>18</i>  return (</span>
+<span class="line"><i>19</i>    &lt;Badge variant={variant} className={className}&gt;</span>
+<span class="line"><i>20</i>      {status ? appointmentStatusLabels[status] : &quot;Sin estado&quot;}</span>
+<span class="line"><i>21</i>    &lt;/Badge&gt;</span>
+<span class="line"><i>22</i>  );</span>
+<span class="line"><i>23</i>}</span></code></pre></section></div></details><details><summary>src/components/PageHeading.tsx</summary><div class="comparison"><section><h3>Antes · 8f76545</h3><pre><code><span class="line"><i>1</i>// Componente nuevo: no existía en la versión original.</span></code></pre></section><section><h3>Después · rama de Ángel</h3><pre><code><span class="line"><i>1</i>import type { ReactNode } from &quot;react&quot;;</span>
+<span class="line"><i>2</i></span>
+<span class="line"><i>3</i>interface PageHeadingProps {</span>
+<span class="line"><i>4</i>  eyebrow: ReactNode;</span>
+<span class="line"><i>5</i>  title: ReactNode;</span>
+<span class="line"><i>6</i>  description: ReactNode;</span>
+<span class="line"><i>7</i>}</span>
+<span class="line"><i>8</i></span>
+<span class="line"><i>9</i>export default function PageHeading({</span>
+<span class="line"><i>10</i>  eyebrow,</span>
+<span class="line"><i>11</i>  title,</span>
+<span class="line"><i>12</i>  description,</span>
+<span class="line"><i>13</i>}: PageHeadingProps) {</span>
+<span class="line"><i>14</i>  return (</span>
+<span class="line"><i>15</i>    &lt;div className=&quot;page-heading&quot;&gt;</span>
+<span class="line"><i>16</i>      &lt;span className=&quot;eyebrow&quot;&gt;{eyebrow}&lt;/span&gt;</span>
+<span class="line"><i>17</i>      &lt;h1&gt;{title}&lt;/h1&gt;</span>
+<span class="line"><i>18</i>      &lt;p&gt;{description}&lt;/p&gt;</span>
+<span class="line"><i>19</i>    &lt;/div&gt;</span>
+<span class="line"><i>20</i>  );</span>
+<span class="line"><i>21</i>}</span></code></pre></section></div></details><details><summary>src/lib/appointment-presentation.ts</summary><div class="comparison"><section><h3>Antes · 8f76545</h3><pre><code><span class="line"><i>1</i>// Componente nuevo: no existía en la versión original.</span></code></pre></section><section><h3>Después · rama de Ángel</h3><pre><code><span class="line"><i>1</i>import type { useAppointments } from &quot;@/hooks/useSupabaseData&quot;;</span>
+<span class="line"><i>2</i></span>
+<span class="line"><i>3</i>export type AppointmentListItem = NonNullable&lt;</span>
+<span class="line"><i>4</i>  ReturnType&lt;typeof useAppointments&gt;[&quot;data&quot;]</span>
+<span class="line"><i>5</i>&gt;[number];</span>
+<span class="line"><i>6</i>export type AppointmentStatus = AppointmentListItem[&quot;status&quot;];</span>
+<span class="line"><i>7</i></span>
+<span class="line"><i>8</i>export const appointmentStatusLabels: Record&lt;AppointmentStatus, string&gt; = {</span>
+<span class="line"><i>9</i>  pending: &quot;Pendiente&quot;,</span>
+<span class="line"><i>10</i>  confirmed: &quot;Confirmada&quot;,</span>
+<span class="line"><i>11</i>  completed: &quot;Completada&quot;,</span>
+<span class="line"><i>12</i>  cancelled: &quot;Cancelada&quot;,</span>
+<span class="line"><i>13</i>};</span>
+<span class="line"><i>14</i></span>
+<span class="line"><i>15</i>export const appointmentFilters = [</span>
+<span class="line"><i>16</i>  { id: &quot;active&quot;, name: &quot;Activas&quot; },</span>
+<span class="line"><i>17</i>  { id: &quot;completed&quot;, name: &quot;Completadas&quot; },</span>
+<span class="line"><i>18</i>  { id: &quot;cancelled&quot;, name: &quot;Canceladas&quot; },</span>
+<span class="line"><i>19</i>  { id: &quot;all&quot;, name: &quot;Todas&quot; },</span>
+<span class="line"><i>20</i>] as const;</span>
+<span class="line"><i>21</i></span>
+<span class="line"><i>22</i>export type AppointmentFilter = (typeof appointmentFilters)[number][&quot;id&quot;];</span>
+<span class="line"><i>23</i></span>
+<span class="line"><i>24</i>export function isActiveAppointment(status: AppointmentStatus) {</span>
+<span class="line"><i>25</i>  return status === &quot;pending&quot; || status === &quot;confirmed&quot;;</span>
+<span class="line"><i>26</i>}</span>
+<span class="line"><i>27</i></span>
+<span class="line"><i>28</i>export function filterAppointments(</span>
+<span class="line"><i>29</i>  appointments: AppointmentListItem[],</span>
+<span class="line"><i>30</i>  filter: AppointmentFilter,</span>
+<span class="line"><i>31</i>) {</span>
+<span class="line"><i>32</i>  return appointments.filter((appointment) =&gt;</span>
+<span class="line"><i>33</i>    filter === &quot;all&quot; ||</span>
+<span class="line"><i>34</i>    (filter === &quot;active&quot;</span>
+<span class="line"><i>35</i>      ? isActiveAppointment(appointment.status)</span>
+<span class="line"><i>36</i>      : appointment.status === filter),</span>
+<span class="line"><i>37</i>  );</span>
+<span class="line"><i>38</i>}</span></code></pre></section></div></details><footer>Archivos fuente reales · No son capturas simuladas de GitHub · Revisión propuesta hacia develop</footer></main></html>
