@@ -1,3 +1,4 @@
+import RegisteredAccounts from "@/components/RegisteredAccounts";
 import PageHeading from "@/components/PageHeading";
 import AdminRoleForm from "@/components/AdminRoleForm";
 import { useQuery } from "@tanstack/react-query";
@@ -10,7 +11,7 @@ export default function AdminDashboard() {
       const [profiles, appointments] = await Promise.all([
         supabase
           .from("profiles")
-          .select("id,email,name,user_type")
+          .select("id,email,name,user_type,created_at")
           .order("created_at", { ascending: false }),
         supabase
           .from("appointments")
@@ -49,47 +50,7 @@ export default function AdminDashboard() {
             }
             appointments={query.data.count}
           />
-          <section className="surface">
-            <div className="section-heading">
-              <div>
-                <h2>Cuentas registradas</h2>
-                <p>Los roles se administran de forma segura en el servidor.</p>
-              </div>
-              <span className="text-sm text-slate-500">
-                {query.data.profiles.length} cuentas
-              </span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="users-table">
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Correo electrónico</th>
-                    <th>Rol</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {query.data.profiles.map((p) => (
-                    <tr key={p.id}>
-                      <td>{p.name}</td>
-                      <td>{p.email}</td>
-                      <td>
-                        <span className="role-badge">
-                          {
-                            {
-                              patient: "Paciente",
-                              doctor: "Médico",
-                              admin: "Administrador",
-                            }[p.user_type]
-                          }
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+          <RegisteredAccounts profiles={query.data.profiles} />
           <AdminRoleForm profiles={query.data.profiles} />
         </>
       )}

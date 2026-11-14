@@ -26,8 +26,8 @@ El listado pasó de **181 a 92 líneas** al trasladar la presentación de cada c
 
 ### Verificación
 
-- **71 comprobaciones aprobadas** con datos ficticios: comparación del HTML original y optimizado, filtros, acciones por rol, comprobante, carga, errores, lista vacía, reintento y callbacks.
-- **TypeScript, compilación y ESLint de los 10 archivos del cambio aprobados.**
+- **83 comprobaciones aprobadas** con datos ficticios: regresiones de citas, encabezados, acciones por rol, comprobante, carga, errores, reintento, filtros de cuentas, fechas de Perú y paginación.
+- **TypeScript, compilación y ESLint de los archivos del cambio aprobados.**
 - El lint general conserva **4 errores y 7 advertencias preexistentes** en archivos ajenos al cambio. La compilación conserva avisos de Browserslist y tamaño del bundle.
 - Queda pendiente el recorrido manual completo en navegador y la integración con cuentas reales. Estas comprobaciones usan consultas simuladas y no realizaron operaciones en Supabase remoto.
 
@@ -36,6 +36,17 @@ El listado pasó de **181 a 92 líneas** al trasladar la presentación de cada c
 Rama del aporte: `feature/optimizacion-frontend-angel`. [Pull Request #7](https://github.com/Deadbeat01/Medicitas/pull/7), en borrador hacia `develop`, sin fusión automática. `main` se conserva intacta.
 
 El commit [`30f4b84`](https://github.com/Deadbeat01/Medicitas/commit/30f4b84) contiene la implementación y las pruebas. La pestaña **Files changed** del Pull Request permite revisar el código antes y después. Las evidencias adicionales y el informe para la entrega académica se proporcionaron por separado en el ZIP del avance 3.
+
+### Ampliación: filtros del panel administrativo
+
+- Búsqueda de cuentas por nombre, correo o código, con coincidencias sin distinguir tildes o mayúsculas.
+- Filtros combinables por rol y día de registro; botón **Registrados hoy**. Fechas y horas en `America/Lima`.
+- Tabla con fecha de registro, orden de más reciente a más antiguo y diez cuentas por página.
+- Selección para asignar roles mediante búsqueda y filtros: muestra cinco resultados por página, en lugar de un desplegable con todas las cuentas.
+- El formulario muestra la cuenta seleccionada, conserva su rol actual al seleccionarla y limpia la selección cuando cambian los filtros. Guardar requiere seleccionar una cuenta.
+- `AccountFilters`, `AccountPagination` y `account-filters.ts` se comparten entre la tabla y el selector.
+
+Se verificaron búsqueda sin tildes, selección, bloqueo de guardado al cambiar filtros y consulta de registros de hoy en navegador con datos ficticios. Se crearon dos cuentas demo de paciente y médico; sus contraseñas se entregan por separado y no se publican en el repositorio.
 
 ## Información general del proyecto
 
@@ -50,6 +61,8 @@ npm ci
 Copy-Item .env.example .env.local
 npm run dev
 ```
+
+En una terminal CMD, el comando de copia es `copy .env.example .env.local`.
 
 Abre http://localhost:8080. La clave de `.env.example` es pública y solo permite las operaciones autorizadas por las políticas de la base. Nunca agregues claves secretas ni service_role a variables VITE.
 

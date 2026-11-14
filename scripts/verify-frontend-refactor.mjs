@@ -136,8 +136,11 @@ for (const role of ["patient", "doctor", "admin"]) {
     same("src/pages/Dashboard.tsx", { view }, `Dashboard heading/${role}/${view}`);
   }
 }
-fixture.query = { data: { profiles: [{ id: "1", name: "Demo", email: "demo@example.test", user_type: "patient" }], count: 4 } };
-same("src/pages/AdminDashboard.tsx", {}, "Admin heading");
+fixture.query = { data: { profiles: [{ id: "1", name: "Demo", email: "demo@example.test", user_type: "patient", created_at: "2026-11-14T18:00:00Z" }], count: 4 } };
+const adminHtml = render(after("src/pages/AdminDashboard.tsx").default, {});
+assert.match(adminHtml, /Cuentas registradas/);
+assert.match(adminHtml, /Día de registro/);
+checks++;
 fixture.user.userType = "patient";
 fixture.query = { data: { id: "patient-demo", name: "Paciente Demo", phone: "" } };
 same("src/pages/PatientProfile.tsx", {}, "Profile heading");
@@ -201,4 +204,30 @@ reset();
 elements(List({ currentUser: fixture.user })).find((node) => typeof node.props.onClick === "function").props.onClick();
 assert.equal(retried, true);
 checks++;
-console.log(`PASS: ${checks} frontend regression checks. Original HTML, role actions, filters, preview, loading, error, empty and retry preserved. Synthetic data; no live Supabase operations.`);
+const accountsLib = after("src/lib/account-filters.ts");
+const accounts = [
+  { id: "code-1", name: "Ángel Aguirre", email: "angel@example.test", user_type: "patient", created_at: "2026-11-15T03:00:00Z" },
+  { id: "code-2", name: "Médico Demo", email: "doctor@example.test", user_type: "doctor", created_at: "2026-11-15T06:00:00Z" },
+];
+assert.equal(accountsLib.registrationDay(accounts[0].created_at), "2026-11-14"); checks++;
+assert.equal(accountsLib.registrationDay(accounts[1].created_at), "2026-11-15"); checks++;
+for (const [filters, ids] of [
+  [{ search: "angel", role: "all", day: "" }, ["code-1"]],
+  [{ search: "example.test", role: "doctor", day: "" }, ["code-2"]],
+  [{ search: "", role: "all", day: "2026-11-14" }, ["code-1"]],
+  [{ search: "code-1", role: "doctor", day: "" }, []],
+  [{ search: "aguirre angel", role: "patient", day: "2026-11-14" }, ["code-1"]],
+  [{ search: "", role: "all", day: "" }, ["code-2", "code-1"]],
+]) {
+  assert.deepEqual(accountsLib.filterAccounts(accounts, filters).map((p) => p.id), ids); checks++;
+}
+assert.deepEqual(accounts.map((a) => a.id), ["code-1", "code-2"]); checks++;
+const Registered = after("src/components/RegisteredAccounts.tsx").default;
+const manyAccounts = Array.from({ length: 23 }, (_, index) => ({ ...accounts[0], id: String(index), name: `Persona ${index}` }));
+fixture.states = [{ ...accountsLib.emptyAccountFilters }, 1];
+assert.equal((render(Registered, { profiles: manyAccounts }).match(/<tr>/g) ?? []).length, 11); checks++;
+fixture.states = [{ ...accountsLib.emptyAccountFilters }, 3];
+assert.equal((render(Registered, { profiles: manyAccounts }).match(/<tr>/g) ?? []).length, 4); checks++;
+fixture.states = [{ search: "no-existe", role: "all", day: "" }, 3];
+assert.match(render(Registered, { profiles: manyAccounts }), /No hay cuentas/); checks++;
+console.log(`PASS: ${checks} frontend checks. Appointment regressions, shared headings, account filters, Peru dates and pagination verified. Synthetic data; no live Supabase operations.`);

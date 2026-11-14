@@ -1,3 +1,6 @@
+import AccountFilters from "@/components/AccountFilters";
+import AccountPagination from "@/components/AccountPagination";
+import { accountRoles, emptyAccountFilters, filterAccounts, type Account } from "@/lib/account-filters";
 import { useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,12 +10,20 @@ import { Label } from "@/components/ui/label";
 export default function AdminRoleForm({
   profiles,
 }: {
-  profiles: { id: string; name: string; email: string }[];
+  profiles: Account[];
 }) {
   const client = useQueryClient();
   const hospitals = useHospitals();
   const specialties = useSpecialties();
   const [target, setTarget] = useState("");
+  const [filters, setFilters] = useState({ ...emptyAccountFilters });
+  const [requestedPage, setPage] = useState(1);
+  const hasFilters = Boolean(filters.search.trim() || filters.role !== "all" || filters.day);
+  const matches = hasFilters ? filterAccounts(profiles, filters) : [];
+  const pages = Math.max(1, Math.ceil(matches.length / 5));
+  const page = Math.min(requestedPage, pages);
+  const candidates = matches.slice((page - 1) * 5, page * 5);
+  const selectedAccount = profiles.find((account) => account.id === target);
   const [role, setRole] = useState<"patient" | "doctor" | "admin">("patient");
   const [hospital, setHospital] = useState("");
   const [specialty, setSpecialty] = useState("");
@@ -23,6 +34,10 @@ export default function AdminRoleForm({
     e.preventDefault();
     setError("");
     setMessage("");
+    if (!selectedAccount) {
+      setError("Busca y selecciona una cuenta antes de guardar el rol.");
+      return;
+    }
     setBusy(true);
     try {
       const { error } = await supabase.rpc("admin_assign_role", {
@@ -57,22 +72,39 @@ export default function AdminRoleForm({
       </p>
       <form onSubmit={save} className="space-y-5">
         <fieldset disabled={busy} className="grid md:grid-cols-2 gap-5">
-          <div className="field">
-            <Label htmlFor="role-account">Cuenta</Label>
-            <select
-              id="role-account"
-              className="form-select"
-              required
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-            >
-              <option value="">Selecciona una cuenta</option>
-              {profiles.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} · {p.email}
-                </option>
-              ))}
-            </select>
+          <div className="md:col-span-2">
+            <AccountFilters id="role-account" value={filters} onChange={(next) => {
+              setFilters(next);
+              setPage(1);
+              setTarget("");
+              setMessage("");
+              setError("");
+            }} />
+            {!hasFilters ? (
+              <p className="muted">Busca por nombre, correo o código, o aplica un filtro para seleccionar una cuenta.</p>
+            ) : (
+              <>
+                <p className="text-sm text-slate-500 mb-3" role="status">{matches.length} cuentas encontradas</p>
+                <div className="space-y-2" role="group" aria-label="Seleccionar cuenta para asignar rol">
+                  {candidates.map((account) => (
+                    <label key={account.id} className="flex items-start gap-3 rounded-lg border p-3 cursor-pointer">
+                      <input type="radio" name="role-account" value={account.id} checked={target === account.id} onChange={() => {
+                        setTarget(account.id);
+                        setRole(account.user_type);
+                        setHospital("");
+                        setSpecialty("");
+                        setMessage("");
+                        setError("");
+                      }} />
+                      <span className="min-w-0"><strong className="block">{account.name}</strong><span className="block text-sm break-all">{account.email}</span><span className="text-sm text-slate-500">{accountRoles[account.user_type]}</span></span>
+                    </label>
+                  ))}
+                  {!candidates.length && <p role="status">No hay cuentas que coincidan con estos filtros.</p>}
+                </div>
+                <AccountPagination page={page} pages={pages} onChange={setPage} />
+              </>
+            )}
+            {selectedAccount && <p className="notice mt-4" role="status">Cuenta seleccionada: <strong>{selectedAccount.name}</strong> · {selectedAccount.email}</p>}
           </div>
           <div className="field">
             <Label htmlFor="role-type">Rol autorizado</Label>
@@ -125,7 +157,7 @@ export default function AdminRoleForm({
               </div>
             </>
           )}
-          <Button className="justify-self-start" type="submit">
+          <Button className="justify-self-start" type="submit" disabled={!selectedAccount}>
             {busy ? "Guardando..." : "Guardar rol"}
           </Button>
         </fieldset>
