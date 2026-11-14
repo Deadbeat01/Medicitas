@@ -1,3 +1,4 @@
+import PageHeading from "@/components/PageHeading";
 import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -193,11 +194,11 @@ export default function PatientProfile() {
   if (!user) return null;
   return (
     <div className="space-y-7">
-      <div className="page-heading">
-        <span className="eyebrow">CONOCERTE ES CUIDARTE MEJOR</span>
-        <h1>Mi perfil e historial</h1>
-        <p>Tus datos al día, tu atención en un solo lugar.</p>
-      </div>
+      <PageHeading
+        eyebrow="CONOCERTE ES CUIDARTE MEJOR"
+        title="Mi perfil e historial"
+        description="Tus datos al día, tu atención en un solo lugar."
+      />
       <div className="profile-grid">
         <aside className="surface profile-summary">
           <div className="profile-avatar">{user.name.slice(0, 1)}</div>

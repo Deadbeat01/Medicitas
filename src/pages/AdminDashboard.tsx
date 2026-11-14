@@ -1,3 +1,4 @@
+import PageHeading from "@/components/PageHeading";
 import AdminRoleForm from "@/components/AdminRoleForm";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,11 +23,11 @@ export default function AdminDashboard() {
   });
   return (
     <div className="space-y-7">
-      <div className="page-heading">
-        <span className="eyebrow">VISIÓN GENERAL</span>
-        <h1>Panel de administración</h1>
-        <p>Las personas y la atención que hacen posible MediCitas.</p>
-      </div>
+      <PageHeading
+        eyebrow="VISIÓN GENERAL"
+        title="Panel de administración"
+        description="Las personas y la atención que hacen posible MediCitas."
+      />
       {query.isPending ? (
         <p role="status">Cargando estadísticas...</p>
       ) : query.isError ? (
