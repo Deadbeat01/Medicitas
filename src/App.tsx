@@ -9,6 +9,7 @@ import AppLayout from "@/components/AppLayout";
 import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
 import PatientProfile from "@/pages/PatientProfile";
+import PatientHistoryPage from "@/pages/PatientHistoryPage";
 import ForgotPassword from "@/pages/ForgotPassword";
 import AdminDashboard from "@/pages/AdminDashboard";
 import NotFound from "@/pages/NotFound";
@@ -46,6 +47,7 @@ export default function App() {
                       element={<Dashboard view="book" />}
                     />
                     <Route path="/perfil" element={<PatientProfile />} />
+                    <Route path="/historial" element={<PatientHistoryPage />} />
                   </Route>
                   <Route element={<ProtectedRoute roles={["admin"]} />}>
                     <Route path="/admin" element={<AdminDashboard />} />

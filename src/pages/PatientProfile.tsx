@@ -2,7 +2,6 @@ import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import PatientHistory from "@/components/PatientHistory";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -195,8 +194,8 @@ export default function PatientProfile() {
     <div className="space-y-7">
       <div className="page-heading">
         <span className="eyebrow">CONOCERTE ES CUIDARTE MEJOR</span>
-        <h1>Mi perfil e historial</h1>
-        <p>Tus datos al día, tu atención en un solo lugar.</p>
+        <h1>Mi perfil</h1>
+        <p>Administra tus datos personales y la configuración de tu cuenta.</p>
       </div>
       <div className="profile-grid">
         <aside className="surface profile-summary">
@@ -238,7 +237,6 @@ export default function PatientProfile() {
           </section>
         </div>
       </div>
-      <PatientHistory currentUser={user} />
     </div>
   );
 }

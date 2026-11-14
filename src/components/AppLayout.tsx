@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Plus,
   Bell,
+  History,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
@@ -49,7 +50,8 @@ export default function AppLayout() {
             ? [
                 { to: "/agendar", text: "Agendar consulta", Icon: Plus },
                 { to: "/citas", text: "Mis citas", Icon: CalendarDays },
-                { to: "/perfil", text: "Perfil e historial", Icon: UserRound },
+                { to: "/perfil", text: "Mi perfil", Icon: UserRound },
+                { to: "/historial", text: "Historial", Icon: History },
               ]
             : []),
         ];
