@@ -2,15 +2,13 @@ import { useState } from "react";
 import type { User } from "@/hooks/useAuth";
 import { useAppointments, useUpdateAppointment } from "@/hooks/useSupabaseData";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, MapPin, Clock3, Check, X, FileText } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import AppointmentEmailTemplate from "@/components/AppointmentEmailTemplate";
-const labels = {
-  pending: "Pendiente",
-  confirmed: "Confirmada",
-  completed: "Completada",
-  cancelled: "Cancelada",
-};
+import { CalendarDays } from "lucide-react";
+import AppointmentCard from "@/components/AppointmentCard";
+import {
+  appointmentFilters,
+  filterAppointments,
+  type AppointmentFilter,
+} from "@/lib/appointment-presentation";
 export default function AppointmentsListWithSupabase({
   currentUser,
 }: {
@@ -18,7 +16,7 @@ export default function AppointmentsListWithSupabase({
 }) {
   const appointments = useAppointments();
   const update = useUpdateAppointment();
-  const [filter, setFilter] = useState("active");
+  const [filter, setFilter] = useState<AppointmentFilter>("active");
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
   async function change(
@@ -49,22 +47,11 @@ export default function AppointmentsListWithSupabase({
         </Button>
       </div>
     );
-  const rows = appointments.data.filter(
-    (a) =>
-      filter === "all" ||
-      (filter === "active"
-        ? ["pending", "confirmed"].includes(a.status)
-        : a.status === filter),
-  );
+  const rows = filterAppointments(appointments.data, filter);
   return (
     <section>
       <div className="appointment-filters" aria-label="Filtrar citas">
-        {[
-          { id: "active", name: "Activas" },
-          { id: "completed", name: "Completadas" },
-          { id: "cancelled", name: "Canceladas" },
-          { id: "all", name: "Todas" },
-        ].map((f) => (
+        {appointmentFilters.map((f) => (
           <button
             key={f.id}
             onClick={() => setFilter(f.id)}
@@ -88,91 +75,15 @@ export default function AppointmentsListWithSupabase({
       ) : (
         <div className="appointment-list">
           {rows.map((a) => (
-            <article key={a.id} className="appointment-row">
-              <div className="appointment-date">
-                <strong>{a.appointment_date.slice(-2)}</strong>
-                <span>
-                  {new Date(
-                    a.appointment_date + "T12:00:00",
-                  ).toLocaleDateString("es-PE", {
-                    month: "short",
-                    year: "numeric",
-                  })}
-                </span>
-              </div>
-              <div className="appointment-details">
-                <div className="flex flex-wrap gap-3 items-center">
-                  <h3>{a.specialty?.name ?? "Consulta médica"}</h3>
-                  <Badge variant="outline" className={"status-" + a.status}>
-                    {labels[a.status]}
-                  </Badge>
-                </div>
-                <p>
-                  {a.doctor?.name}
-                  {currentUser.userType === "doctor"
-                    ? " · " + a.patient_name
-                    : ""}
-                </p>
-                <div className="appointment-meta">
-                  <span>
-                    <Clock3 size={14} />
-                    {a.appointment_time.slice(0, 5)}
-                  </span>
-                  <span>
-                    <MapPin size={14} />
-                    {a.hospital?.name}
-                  </span>
-                </div>
-                <p className="text-sm mt-2 text-slate-500">{a.reason}</p>
-              </div>
-              <div className="appointment-actions">
-                {a.status === "pending" &&
-                  currentUser.userType === "doctor" && (
-                    <Button
-                      size="sm"
-                      disabled={update.isPending}
-                      onClick={() => change(a.id, "confirmed")}
-                    >
-                      <Check size={15} />
-                      Confirmar
-                    </Button>
-                  )}
-                {a.status === "confirmed" &&
-                  currentUser.userType === "doctor" && (
-                    <Button
-                      size="sm"
-                      disabled={update.isPending}
-                      onClick={() => change(a.id, "completed")}
-                    >
-                      Completar
-                    </Button>
-                  )}
-                {["pending", "confirmed"].includes(a.status) && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={update.isPending}
-                    onClick={() => change(a.id, "cancelled")}
-                  >
-                    <X size={14} />
-                    Cancelar
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setPreview(preview === a.id ? null : a.id)}
-                >
-                  <FileText size={15} />
-                  Comprobante
-                </Button>
-              </div>
-              {preview === a.id && (
-                <div className="w-full basis-full">
-                  <AppointmentEmailTemplate appointment={a} />
-                </div>
-              )}
-            </article>
+            <AppointmentCard
+              key={a.id}
+              appointment={a}
+              userType={currentUser.userType}
+              isUpdating={update.isPending}
+              isPreviewOpen={preview === a.id}
+              onStatusChange={change}
+              onTogglePreview={() => setPreview(preview === a.id ? null : a.id)}
+            />
           ))}
         </div>
       )}

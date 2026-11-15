@@ -1,8 +1,8 @@
-import { useAppointments } from "@/hooks/useSupabaseData";
+import type { AppointmentListItem } from "@/lib/appointment-presentation";
 export default function AppointmentEmailTemplate({
   appointment,
 }: {
-  appointment: NonNullable<ReturnType<typeof useAppointments>["data"]>[number];
+  appointment: AppointmentListItem;
 }) {
   return (
     <div className="notice mt-4">
