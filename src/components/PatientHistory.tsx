@@ -3,14 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-
-const statusLabels = {
-  pending: "Pendiente",
-  confirmed: "Confirmada",
-  completed: "Completada",
-  cancelled: "Cancelada",
-};
+import AppointmentStatusBadge from "@/components/AppointmentStatusBadge";
 
 export default function PatientHistory({ currentUser }: { currentUser: User }) {
   const history = useQuery({
@@ -69,11 +62,10 @@ export default function PatientHistory({ currentUser }: { currentUser: User }) {
                     <h3 className="font-semibold">
                       {appointment.specialty?.name ?? "Consulta médica"}
                     </h3>
-                    <Badge variant="secondary">
-                      {appointment.status
-                        ? statusLabels[appointment.status]
-                        : "Sin estado"}
-                    </Badge>
+                    <AppointmentStatusBadge
+                      status={appointment.status}
+                      variant="secondary"
+                    />
                   </div>
                   <p>
                     {new Date(

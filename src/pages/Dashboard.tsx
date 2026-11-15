@@ -1,3 +1,4 @@
+import PageHeading from "@/components/PageHeading";
 import MedicalNotes from "@/components/MedicalNotes";
 import { Link, Navigate } from "react-router-dom";
 import {
@@ -24,27 +25,22 @@ export default function Dashboard({
   if (view === "book")
     return (
       <>
-        <div className="page-heading">
-          <span className="eyebrow">UN PASO HACIA TU BIENESTAR</span>
-          <h1>Agenda tu próxima consulta</h1>
-          <p>
-            Elige el centro, especialista y horario que mejor se adapten a ti.
-          </p>
-        </div>
+        <PageHeading
+          eyebrow="UN PASO HACIA TU BIENESTAR"
+          title="Agenda tu próxima consulta"
+          description="Elige el centro, especialista y horario que mejor se adapten a ti."
+        />
         <AppointmentFormWithSupabase currentUser={user} />
       </>
     );
   if (view === "appointments")
     return (
       <>
-        <div className="page-heading">
-          <span className="eyebrow">TU ATENCIÓN, ORGANIZADA</span>
-          <h1>Mis citas</h1>
-          <p>
-            Consulta el estado de tus reservas y administra tus próximas
-            visitas.
-          </p>
-        </div>
+        <PageHeading
+          eyebrow="TU ATENCIÓN, ORGANIZADA"
+          title="Mis citas"
+          description="Consulta el estado de tus reservas y administra tus próximas visitas."
+        />
         <AppointmentsListWithSupabase currentUser={user} />
       </>
     );
@@ -56,22 +52,24 @@ export default function Dashboard({
     appointments.data?.filter((a) => a.status === "completed").length ?? 0;
   return (
     <div className="space-y-7">
-      <div className="page-heading">
-        <span className="eyebrow">
-          {user.userType === "doctor"
+      <PageHeading
+        eyebrow={
+          user.userType === "doctor"
             ? "TU AGENDA DE HOY"
-            : "TU ESPACIO DE BIENESTAR"}
-        </span>
-        <h1>
-          Hola, {user.name.split(" ")[0]}{" "}
-          <span className="greeting-dot">.</span>
-        </h1>
-        <p>
-          {user.userType === "doctor"
+            : "TU ESPACIO DE BIENESTAR"
+        }
+        title={
+          <>
+            Hola, {user.name.split(" ")[0]}{" "}
+            <span className="greeting-dot">.</span>
+          </>
+        }
+        description={
+          user.userType === "doctor"
             ? "Cada consulta es una oportunidad para cuidar."
-            : "Qué bueno que te tomes un momento para cuidar de ti."}
-        </p>
-      </div>
+            : "Qué bueno que te tomes un momento para cuidar de ti."
+        }
+      />
       <section className="welcome-banner">
         <div>
           <span className="eyebrow light">CUIDARTE ES LO PRIMERO</span>
