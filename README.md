@@ -75,3 +75,106 @@ Los documentos en `docs/perfil-paciente` son evidencia histórica de la primera 
 ## Ampliación del catálogo y temas
 
 El directorio compartido ahora incluye seis médicos habilitados, distribuidos en seis centros. Consulta docs/catalogo-demostracion.md. El acceso y los paneles incluyen un interruptor de modo claro/oscuro; la preferencia se mantiene al recargar. Las cuentas y datos adicionales son ficticios para la demostración universitaria.
+
+
+## Avance 3 – Distribución de responsabilidades del equipo
+
+Durante el desarrollo del Avance 3 del proyecto MediCitas, se establecieron responsabilidades específicas para cada integrante del equipo, con el propósito de mejorar la calidad del código, optimizar las interfaces, organizar el repositorio y mantener actualizada la documentación técnica.
+
+### 1. Angel – Optimización del frontend
+
+**Responsabilidad:** Revisar y optimizar los componentes principales del frontend para mejorar la organización, legibilidad y mantenibilidad del código.
+
+**Actividades asignadas:**
+- Revisar los componentes principales del frontend.
+- Identificar código repetido o innecesario.
+- Mejorar la organización de los componentes.
+- Optimizar el código para facilitar su lectura y mantenimiento.
+- Verificar que los cambios no afecten el funcionamiento de las interfaces.
+
+**Entregables:**
+- Componentes optimizados.
+- Evidencias del código antes y después de las mejoras.
+- Registro de los cambios realizados en GitHub.
+
+### 2. Chauca – Refactorización y organización del código
+
+**Responsabilidad:** Mejorar la estructura interna del proyecto mediante la refactorización del código y la organización de las ramas de trabajo.
+
+**Actividades asignadas:**
+- Organizar las ramas de trabajo del proyecto.
+- Revisar los componentes existentes para identificar oportunidades de refactorización.
+- Mejorar la estructura del código y la reutilización de componentes.
+- Corregir posibles duplicaciones o desorganización del código.
+- Comprobar que las modificaciones mantengan el funcionamiento del sistema.
+
+**Entregables:**
+- Ramas organizadas.
+- Código refactorizado.
+- Commits y Pull Requests con los cambios realizados.
+
+### 3. Mya – Documentación técnica
+
+**Responsabilidad:** Mantener organizada y actualizada la documentación técnica del proyecto, registrando las mejoras y modificaciones realizadas durante el Avance 3.
+
+**Actividades asignadas:**
+- Actualizar la documentación general del proyecto.
+- Describir las mejoras realizadas durante el Avance 3.
+- Documentar los cambios en la estructura del sistema.
+- Organizar las evidencias proporcionadas por los integrantes.
+- Apoyar en la elaboración y revisión del informe final.
+
+**Entregables:**
+- Documentación técnica actualizada.
+- Descripción de las mejoras implementadas.
+- Organización de las evidencias para el informe.
+
+### 4. Frank – Optimización de interfaces y estilos
+
+**Responsabilidad:** Mejorar la presentación visual y la organización de los estilos del sistema, garantizando uniformidad y adaptabilidad en las interfaces.
+
+**Actividades asignadas:**
+- Revisar los estilos utilizados en las diferentes interfaces.
+- Identificar estilos repetidos o elementos visuales innecesarios.
+- Mejorar la organización de los estilos del proyecto.
+- Verificar que las interfaces mantengan una presentación uniforme y adaptable.
+- Actualizar el README con información técnica del proyecto.
+
+**Entregables:**
+- Estilos e interfaces optimizados.
+- Evidencias de las mejoras visuales.
+- README actualizado.
+
+### 5. Crhistian – Pruebas técnicas y gestión del repositorio
+
+**Responsabilidad:** Verificar la estabilidad del sistema después de las modificaciones y gestionar la organización de las ramas del repositorio GitHub.
+
+**Actividades asignadas:**
+- Verificar el funcionamiento general del sistema después de las modificaciones.
+- Ejecutar las pruebas técnicas mediante los comandos `npm run lint` y `npm run build`.
+- Registrar los resultados obtenidos durante las pruebas.
+- Revisar las ramas existentes en GitHub e identificar aquellas que ya fueron integradas.
+- Realizar la limpieza de ramas que ya no sean necesarias, previa verificación de sus cambios.
+- Registrar evidencias del proceso de pruebas y organización del repositorio.
+
+**Entregables:**
+- Evidencias de ejecución de pruebas.
+- Registro de resultados y posibles errores encontrados.
+- Capturas de la organización de ramas antes y después de la limpieza.
+- Actualización del apartado de pruebas y gestión del repositorio en el informe.
+
+---
+
+### Organización del trabajo colaborativo
+
+Las actividades del Avance 3 se distribuyen en cinco áreas de trabajo complementarias:
+
+| Integrante | Área de trabajo |
+|---|---|
+| Angel | Optimización del frontend |
+| Chauca | Refactorización y organización del código |
+| Mya | Documentación técnica |
+| Frank | Optimización de interfaces y estilos |
+| Crhistian | Pruebas técnicas y gestión del repositorio |
+
+Cada integrante es responsable de desarrollar las actividades asignadas y proporcionar las evidencias correspondientes, permitiendo documentar los cambios y verificar los resultados obtenidos durante esta etapa del proyecto.
