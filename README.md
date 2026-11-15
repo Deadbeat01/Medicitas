@@ -33,7 +33,7 @@ El listado pasó de **181 a 92 líneas** al trasladar la presentación de cada c
 
 ### Registro en GitHub y evidencias
 
-Rama del aporte: `feature/optimizacion-frontend-angel`. [Pull Request #7](https://github.com/Deadbeat01/Medicitas/pull/7), en borrador hacia `develop`, sin fusión automática. `main` se conserva intacta.
+Rama del aporte: `feature/optimizacion-frontend-angel`. El [Pull Request #7](https://github.com/Deadbeat01/Medicitas/pull/7) fue integrado en `develop` por Mya000 el 14 de noviembre de 2026. La corrección posterior de los textos de notas médicas se publica en `fix/textos-notas-angel`. En esta intervención no se efectuaron escrituras ni fusiones en `main`.
 
 El commit [`30f4b84`](https://github.com/Deadbeat01/Medicitas/commit/30f4b84) contiene la implementación y las pruebas. La pestaña **Files changed** del Pull Request permite revisar el código antes y después. Las evidencias adicionales y el informe para la entrega académica se proporcionaron por separado en el ZIP del avance 3.
 
