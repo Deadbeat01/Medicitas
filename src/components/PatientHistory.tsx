@@ -88,12 +88,12 @@ export default function PatientHistory({ currentUser }: { currentUser: User }) {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Notas médicas · demostración</CardTitle>
+          <CardTitle>Notas médicas</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Estructura inicial con datos ficticios. No ingresar información
-            clínica real.
+            Las notas de atención son gestionadas por el personal médico
+            asignado.
           </p>
           <p>
             Acceso restringido al personal médico asignado. El servidor verifica

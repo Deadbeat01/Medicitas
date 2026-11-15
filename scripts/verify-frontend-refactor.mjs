@@ -89,7 +89,12 @@ function render(Component, props) {
   return renderToStaticMarkup(React.createElement(Component, props));
 }
 function same(relative, props, label) {
-  assert.equal(render(after(relative).default, props), render(before(relative).default, props), label);
+  let expected = render(before(relative).default, props);
+  if (["src/components/PatientHistory.tsx", "src/pages/PatientProfile.tsx"].includes(relative)) {
+    expected = expected.replace("Notas médicas · demostración", "Notas médicas")
+      .replace("Estructura inicial con datos ficticios. No ingresar información clínica real.", "Las notas de atención son gestionadas por el personal médico asignado.");
+  }
+  assert.equal(render(after(relative).default, props), expected, label);
   checks++;
 }
 const statuses = ["pending", "confirmed", "completed", "cancelled"];
@@ -230,4 +235,13 @@ fixture.states = [{ ...accountsLib.emptyAccountFilters }, 3];
 assert.equal((render(Registered, { profiles: manyAccounts }).match(/<tr>/g) ?? []).length, 4); checks++;
 fixture.states = [{ search: "no-existe", role: "all", day: "" }, 3];
 assert.match(render(Registered, { profiles: manyAccounts }), /No hay cuentas/); checks++;
-console.log(`PASS: ${checks} frontend checks. Appointment regressions, shared headings, account filters, Peru dates and pagination verified. Synthetic data; no live Supabase operations.`);
+fixture.user.userType = "doctor";
+fixture.states = null;
+fixture.query = { data: [], isPending: false };
+const MedicalNotes = after("src/components/MedicalNotes.tsx").default;
+const notesHtml = render(MedicalNotes, {});
+assert.match(notesHtml, /No hay notas médicas disponibles/);
+assert.doesNotMatch(notesHtml, /demostración|ficticio/i); checks++;
+fixture.user.userType = "patient";
+assert.equal(render(MedicalNotes, {}), ""); checks++;
+console.log(`PASS: ${checks} frontend checks. Appointment regressions, shared headings, account filters, Peru dates, pagination and medical notes verified. Synthetic data; no live Supabase operations.`);

@@ -9,7 +9,7 @@ export default function MedicalNotes() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("medical_notes")
-        .select("id,body,is_demo,created_at,patient:patients(name)")
+        .select("id,body,created_at,patient:patients(name)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -18,9 +18,9 @@ export default function MedicalNotes() {
   if (user?.userType !== "doctor") return null;
   return (
     <section className="surface mt-7">
-      <h2 className="card-heading">Notas médicas de demostración</h2>
+      <h2 className="card-heading">Notas médicas</h2>
       <p className="muted mb-5">
-        Solo datos ficticios de pacientes asignados a tu atención.
+        Notas de los pacientes asignados a tu atención.
       </p>
       {notes.isPending ? (
         <p role="status">Cargando notas...</p>
@@ -32,14 +32,13 @@ export default function MedicalNotes() {
           </button>
         </p>
       ) : !notes.data.length ? (
-        <p>No hay notas de demostración disponibles.</p>
+        <p>No hay notas médicas disponibles.</p>
       ) : (
         notes.data.map((n) => (
           <article key={n.id} className="notice mb-3">
-            <strong>{n.patient?.name ?? "Paciente de demostración"}</strong>
+            <strong>{n.patient?.name ?? "Paciente"}</strong>
             <p>{n.body}</p>
             <small>
-              Ejemplo ficticio ·{" "}
               {new Date(n.created_at).toLocaleDateString("es-PE")}
             </small>
           </article>
