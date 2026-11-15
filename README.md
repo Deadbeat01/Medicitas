@@ -26,7 +26,7 @@ El listado pasó de **181 a 92 líneas** al trasladar la presentación de cada c
 
 ### Verificación
 
-- **83 comprobaciones aprobadas** con datos ficticios: regresiones de citas, encabezados, acciones por rol, comprobante, carga, errores, reintento, filtros de cuentas, fechas de Perú y paginación.
+- **85 comprobaciones aprobadas** con datos ficticios: regresiones de citas, encabezados, acciones por rol, comprobante, carga, errores, reintento, filtros de cuentas, fechas de Perú y paginación.
 - **TypeScript, compilación y ESLint de los archivos del cambio aprobados.**
 - El lint general conserva **4 errores y 7 advertencias preexistentes** en archivos ajenos al cambio. La compilación conserva avisos de Browserslist y tamaño del bundle.
 - Queda pendiente el recorrido manual completo en navegador y la integración con cuentas reales. Estas comprobaciones usan consultas simuladas y no realizaron operaciones en Supabase remoto.
@@ -127,3 +127,7 @@ Los documentos en `docs/perfil-paciente` son evidencia histórica de la primera 
 ## Ampliación del catálogo y temas
 
 El directorio compartido ahora incluye seis médicos habilitados, distribuidos en seis centros. Consulta docs/catalogo-demostracion.md. El acceso y los paneles incluyen un interruptor de modo claro/oscuro; la preferencia se mantiene al recargar. Las cuentas y datos adicionales son ficticios para la demostración universitaria.
+
+### Ajuste de textos de notas médicas
+
+Se retiraron las etiquetas de demostración y los mensajes de estructura inicial de las vistas de paciente y médico. Los títulos, mensajes vacíos y textos de apoyo usan ahora nombres de uso normal. La consulta de notas ya no solicita el campo is_demo, que no se presenta en pantalla. Se conservan los controles de acceso y las consultas autorizadas. La corrección se registra en fix/textos-notas-angel para revisión separada.
