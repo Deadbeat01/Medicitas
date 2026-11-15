@@ -1,6 +1,6 @@
 # MediCitas
 
-Aplicación React y TypeScript conectada al proyecto Supabase independiente **Medicitas**, administrado en la organización del usuario. Rama de integración: `feature/integracion-supabase`.
+Aplicación React y TypeScript conectada al proyecto Supabase independiente **Medicitas**, administrado en la organización del usuario.
 
 ## Abrir la aplicación
 
@@ -75,3 +75,7 @@ Los documentos en `docs/perfil-paciente` son evidencia histórica de la primera 
 ## Ampliación del catálogo y temas
 
 El directorio compartido ahora incluye seis médicos habilitados, distribuidos en seis centros. Consulta docs/catalogo-demostracion.md. El acceso y los paneles incluyen un interruptor de modo claro/oscuro; la preferencia se mantiene al recargar. Las cuentas y datos adicionales son ficticios para la demostración universitaria.
+
+## Flujo de ramas
+
+El proyecto sigue Git Flow. `main` guarda la versión estable y `develop` reúne los cambios ya revisados. Cada funcionalidad se desarrolla en una rama `feature/*` creada desde `develop` y entra mediante un Pull Request que revisa otro integrante. Cuando una rama se fusiona, se elimina para que el repositorio solo muestre las ramas en uso.
