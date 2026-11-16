@@ -1,3 +1,4 @@
+import PageHeading from "@/components/PageHeading";
 
 import { useAuth } from "@/hooks/useAuth";
 import PatientHistory from "@/components/PatientHistory";
@@ -9,11 +10,11 @@ export default function PatientHistoryPage() {
 
   return (
     <div className="space-y-7">
-      <div className="page-heading">
-        <span className="eyebrow">TU ATENCIÓN MÉDICA</span>
-        <h1>Mi historial</h1>
-        <p>Consulta tus citas médicas anteriores y su información.</p>
-      </div>
+      <PageHeading
+        eyebrow="TU ATENCIÓN MÉDICA"
+        title="Mi historial"
+        description="Consulta tus citas médicas anteriores y su información."
+      />
 
       <PatientHistory currentUser={user} />
     </div>

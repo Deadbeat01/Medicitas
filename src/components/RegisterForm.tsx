@@ -7,8 +7,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { Stethoscope, User, Lock, Mail, Phone, ArrowLeft } from 'lucide-react';
 
+interface DoctorRegistration {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  phone: string;
+  specialty: string;
+  license: string;
+  bio: string;
+}
+
 interface RegisterFormProps {
-  onRegister: (doctorData: any) => void;
+  onRegister: (doctorData: DoctorRegistration) => void;
   onBackToLogin: () => void;
 }
 

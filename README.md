@@ -1,52 +1,15 @@
-# MediCitas
+# MediCitas: Avance 3 integrado para presentación
 
-## Avance 3 — Ángel: optimización del frontend
+Esta versión reúne el PR #7 de frontend y filtros, el PR #8 de documentación, la separación de perfil e historial del commit original 2f2ca22 y la corrección de textos de notas médicas de 7bd2908.
 
-**Responsable:** Ángel Estefano Aguirre Diaz.
+Rama de entrega: `release/presentacion-avance3-angel`. No se modifica main. Los cambios se integran en una rama independiente para revisión.
 
-**Objetivo:** mejorar la organización y mantenibilidad de los componentes del frontend conservando los textos, estilos y acciones existentes.
+- Abrir la compilación incluida: `ABRIR-PROYECTO.cmd` o `npm.cmd start`. Requiere Node.js y conexión para los datos remotos.
+- Desarrollo: `INICIAR-DESARROLLO.cmd`.
+- Repetir verificaciones: `VERIFICAR-PROYECTO.cmd`.
+- Recorrido de exposición: [GUIA-PARA-EXPONER.md](GUIA-PARA-EXPONER.md).
 
-### Cambios realizados
-
-| Actividad | Resultado |
-| --- | --- |
-| Revisar los componentes principales | Se revisaron el listado de citas, el historial, el comprobante y las páginas de resumen, administración y perfil. |
-| Separar responsabilidades | Se extrajo `AppointmentCard` del listado. `AppointmentsListWithSupabase` conserva las consultas, filtros, errores y actualizaciones. |
-| Eliminar duplicación | Se centralizaron las etiquetas de estado en `appointment-presentation.ts` y se reutiliza `AppointmentStatusBadge` en listado e historial. |
-| Mejorar la organización | Se creó `PageHeading`, compartido por cinco encabezados de tres páginas. |
-| Facilitar lectura y mantenimiento | Se definieron tipos y opciones de filtro reutilizables y se simplificó el tipo de datos del comprobante. |
-
-El listado pasó de **181 a 92 líneas** al trasladar la presentación de cada cita a un componente independiente. Esta medida describe la separación de responsabilidades, no una reducción de todo el código ni una mejora medida de velocidad.
-
-### Componentes y archivos del aporte
-
-- Nuevos: `src/components/AppointmentCard.tsx`, `AppointmentStatusBadge.tsx`, `PageHeading.tsx` y `src/lib/appointment-presentation.ts`.
-- Refactorizados: `AppointmentsListWithSupabase.tsx`, `PatientHistory.tsx`, `AppointmentEmailTemplate.tsx`, `Dashboard.tsx`, `AdminDashboard.tsx` y `PatientProfile.tsx`.
-- Verificación reproducible: `scripts/verify-frontend-refactor.mjs`, disponible con `npm run verify:frontend`.
-
-### Verificación
-
-- **83 comprobaciones aprobadas** con datos ficticios: regresiones de citas, encabezados, acciones por rol, comprobante, carga, errores, reintento, filtros de cuentas, fechas de Perú y paginación.
-- **TypeScript, compilación y ESLint de los archivos del cambio aprobados.**
-- El lint general conserva **4 errores y 7 advertencias preexistentes** en archivos ajenos al cambio. La compilación conserva avisos de Browserslist y tamaño del bundle.
-- Queda pendiente el recorrido manual completo en navegador y la integración con cuentas reales. Estas comprobaciones usan consultas simuladas y no realizaron operaciones en Supabase remoto.
-
-### Registro en GitHub y evidencias
-
-Rama del aporte: `feature/optimizacion-frontend-angel`. [Pull Request #7](https://github.com/Deadbeat01/Medicitas/pull/7), en borrador hacia `develop`, sin fusión automática. `main` se conserva intacta.
-
-El commit [`30f4b84`](https://github.com/Deadbeat01/Medicitas/commit/30f4b84) contiene la implementación y las pruebas. La pestaña **Files changed** del Pull Request permite revisar el código antes y después. Las evidencias adicionales y el informe para la entrega académica se proporcionaron por separado en el ZIP del avance 3.
-
-### Ampliación: filtros del panel administrativo
-
-- Búsqueda de cuentas por nombre, correo o código, con coincidencias sin distinguir tildes o mayúsculas.
-- Filtros combinables por rol y día de registro; botón **Registrados hoy**. Fechas y horas en `America/Lima`.
-- Tabla con fecha de registro, orden de más reciente a más antiguo y diez cuentas por página.
-- Selección para asignar roles mediante búsqueda y filtros: muestra cinco resultados por página, en lugar de un desplegable con todas las cuentas.
-- El formulario muestra la cuenta seleccionada, conserva su rol actual al seleccionarla y limpia la selección cuando cambian los filtros. Guardar requiere seleccionar una cuenta.
-- `AccountFilters`, `AccountPagination` y `account-filters.ts` se comparten entre la tabla y el selector.
-
-Se verificaron búsqueda sin tildes, selección, bloqueo de guardado al cambiar filtros y consulta de registros de hoy en navegador con datos ficticios. Se crearon dos cuentas demo de paciente y médico; sus contraseñas se entregan por separado y no se publican en el repositorio.
+Se corrigieron los cuatro errores generales de lint sin cambiar los permisos ni el esquema remoto. Las pruebas portables comparan el código original conservado en tests/fixtures y aprueban 89 comprobaciones. TypeScript y build aprueban. El lint termina con cero errores y siete advertencias de Fast Refresh.
 
 ## Información general del proyecto
 

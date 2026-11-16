@@ -10,7 +10,7 @@ const ts = require("typescript");
 const React = require("react");
 const { renderToStaticMarkup } = require("react-dom/server");
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const baseline = "8f76545";
+// Baseline source: commit 8f76545, preserved locally for ZIP users without Git.
 const originals = new Set([
   "src/components/AppointmentsListWithSupabase.tsx",
   "src/components/PatientHistory.tsx",
@@ -31,7 +31,7 @@ function loader(before) {
     if (cache.has(file)) return cache.get(file).exports;
     const relative = path.relative(root, file).replaceAll("\\", "/");
     const source = before && originals.has(relative)
-      ? execFileSync("git", ["show", `${baseline}:${relative}`], { cwd: root, encoding: "utf8" })
+      ? readFileSync(path.join(root, "tests/fixtures/frontend-baseline", relative), "utf8")
       : readFileSync(file, "utf8");
     const module = { exports: {} };
     cache.set(file, module);
@@ -90,6 +90,11 @@ function render(Component, props) {
 }
 function same(relative, props, label) {
   let expected = render(before(relative).default, props);
+  if (relative === "src/pages/PatientProfile.tsx") {
+    expected = expected.replace(render(before("src/components/PatientHistory.tsx").default, { currentUser: fixture.user }), "")
+      .replace("Mi perfil e historial", "Mi perfil")
+      .replace("Tus datos al día, tu atención en un solo lugar.", "Administra tus datos personales y la configuración de tu cuenta.");
+  }
   if (["src/components/PatientHistory.tsx", "src/pages/PatientProfile.tsx"].includes(relative)) {
     expected = expected.replace("Notas médicas · demostración", "Notas médicas")
       .replace("Estructura inicial con datos ficticios. No ingresar información clínica real.", "Las notas de atención son gestionadas por el personal médico asignado.");
@@ -149,6 +154,14 @@ checks++;
 fixture.user.userType = "patient";
 fixture.query = { data: { id: "patient-demo", name: "Paciente Demo", phone: "" } };
 same("src/pages/PatientProfile.tsx", {}, "Profile heading");
+
+const profileHtml = render(after("src/pages/PatientProfile.tsx").default, {});
+assert.doesNotMatch(profileHtml, /Historial de citas anteriores/); checks++;
+const historyPageHtml = render(after("src/pages/PatientHistoryPage.tsx").default, {});
+assert.match(historyPageHtml, /Mi historial/); checks++;
+assert.match(historyPageHtml, /Historial de citas anteriores/); checks++;
+const appSource = readFileSync(path.join(root, "src/App.tsx"), "utf8");
+assert.match(appSource, /path="\/historial"/); checks++;
 
 const presentation = after("src/lib/appointment-presentation.ts");
 for (const filter of ["active", "completed", "cancelled", "all"]) {

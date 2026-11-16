@@ -9,7 +9,8 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "verify:frontend": "node scripts/verify-frontend-refactor.mjs"
+    "verify:frontend": "node scripts/verify-frontend-refactor.mjs",
+    "start": "node scripts/serve-built.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
